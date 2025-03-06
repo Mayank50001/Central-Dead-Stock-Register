@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Department Dashboard</h2>
+    <p>Welcome, {{ user.username }}! Here is your department's inventory.</p>
+    <ul>
+        <li><a href="#">View Allocated Stock</a></li>
+        <li><a href="#">Request More Stock</a></li>
+        <li><a href="#">Write Off Items</a></li>
+    </ul>
+{% endblock %}

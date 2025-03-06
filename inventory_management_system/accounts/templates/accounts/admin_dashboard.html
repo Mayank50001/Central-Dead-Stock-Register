@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Admin Dashboard</h2>
+    <p>Welcome, Admin! Here you can manage the entire college inventory.</p>
+    <ul>
+        <li><a href="{% url 'add_department_user' %}">Add Department User</a></li>
+        <li><a href="#">View Inventory Reports</a></li>
+        <li><a href="#">Manage Stock</a></li>
+    </ul>
+{% endblock %}
