@@ -1,11 +1,55 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2>Login</h2>
-<form method="POST">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Login</button>
-</form>
-<p>Don't have an account? Request admin for user creation</p>
+<div class="container d-flex justify-content-center align-items-center min-vh-100";>
+    <div class="card shadow-lg p-4" style="max-width: 400px; width: 100%;">
+        <h2 class="text-center mb-3">Login</h2>
+        
+        <form method="POST">
+            {% csrf_token %}
+            <div class="mb-3">
+                {{ form.email.label_tag }}
+                {{ form.email }}
+            </div>
+            <div class="mb-3">
+                {{ form.password.label_tag }}
+                {{ form.password }}
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">Login</button>
+        </form>
+
+        <p class="text-center mt-3">
+            Don't have an account? <br> Request admin for user creation.
+        </p>
+    </div>
+</div>
+
+<style>
+    body {
+        background-color: #f8f9fa; /* Light background */
+    }
+    .card {
+        border-radius: 10px;
+        background: #fff;
+        margin-top:5px;
+    }
+    h2 {
+        font-weight: 600;
+    }
+    form input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ced4da;
+        border-radius: 5px;
+        margin-top: 5px;
+    }
+    .btn-primary {
+        background-color: #007bff;
+        border: none;
+    }
+    .btn-primary:hover {
+        background-color: #0056b3;
+    }
+</style>
 {% endblock %}

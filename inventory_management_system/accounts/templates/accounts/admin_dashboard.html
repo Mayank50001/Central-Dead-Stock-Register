@@ -1,11 +1,42 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h2>Admin Dashboard</h2>
-    <p>Welcome, Admin! Here you can manage the entire college inventory.</p>
-    <ul>
-        <li><a href="{% url 'add_department_user' %}">Add Department User</a></li>
-        <li><a href="#">View Inventory Reports</a></li>
-        <li><a href="#">Manage Stock</a></li>
-    </ul>
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="#">Inventory Management System</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </div>
+</nav>
+
+<!-- Dashboard -->
+<div class="container mt-5">
+    <div class="card shadow-lg p-4 text-center bg-light">
+        <h2 class="text-primary fw-bold mb-3">Admin Dashboard</h2>
+        <p class="text-muted fs-5">Welcome, Admin! Here you can manage the entire college inventory.</p>
+
+        <ul class="list-unstyled mt-4">
+            <li class="mb-3">
+                <a href="{% url 'add_department_user' %}" class="btn btn-primary btn-lg w-50 shadow-sm">
+                    <i class="fas fa-user-plus me-2"></i> Add Department User
+                </a>
+            </li>
+            <li class="mb-3">
+                <a href="#" class="btn btn-success btn-lg w-50 shadow-sm">
+                    <i class="fas fa-chart-line me-2"></i> View Inventory Reports
+                </a>
+            </li>
+            <li>
+                <a href="#" class="btn btn-warning btn-lg w-50 shadow-sm text-dark">
+                    <i class="fas fa-boxes me-2"></i> Manage Stock
+                </a>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<!-- Bootstrap JS (for navbar toggling) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 {% endblock %}
