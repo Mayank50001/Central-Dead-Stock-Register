@@ -1,11 +1,125 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h2>Department Dashboard</h2>
-    <p>Welcome, {{ user.username }}! Here is your department's inventory.</p>
-    <ul>
-        <li><a href="#">View Allocated Stock</a></li>
-        <li><a href="#">Request More Stock</a></li>
-        <li><a href="#">Write Off Items</a></li>
-    </ul>
+<div class="container-fluid d-flex">
+    <!-- Sidebar -->
+    <nav id="sidebar" class="sidebar">
+        <button class="btn btn-outline-light d-md-none mb-3" onclick="toggleSidebar()">☰</button>
+        <div class="sidebar-content">
+            <h4 class="text-center mt-3 text-light">Welcome to Department Dashboard</h4>
+            <hr class="bg-light">
+            <ul class="nav flex-column mt-3">
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-box-open me-2"></i> View Allocated Stock
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-hand-holding me-2"></i> Request More Stock
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content flex-grow-1">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow">
+            <div class="container-fluid d-flex justify-content-between align-items-center">
+                <span class="navbar-brand fw-bold mx-auto" style="
+                    font-size: 1.8rem;
+                    background: linear-gradient(to right, #1DB954, #17A2B8);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    font-weight: bold;
+                    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+                ">
+                    Inventory Management System
+                </span>
+                <div>
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'logout' %}" class="btn btn-danger">Logout</a>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="btn btn-success">Login</a>
+                    {% endif %}
+                </div>
+            </div>
+        </nav>
+    </div>
+</div>
+
+<!-- Sidebar CSS -->
+<style>
+    .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 250px;
+        height: 100vh;
+        background-color: #121212;
+        color: white;
+        padding-top: 20px;
+        z-index: 1000;
+        transition: all 0.3s ease-in-out;
+    }
+    
+    .sidebar-content {
+        padding: 20px;
+    }
+    
+    .sidebar .nav-link {
+        color: white;
+        padding: 12px;
+        display: block;
+        font-size: 18px;
+        text-decoration: none;
+    }
+    
+    .sidebar .nav-link:hover {
+        background: #1DB954;
+        border-radius: 5px;
+    }
+    
+    .main-content {
+        margin-left: 250px;
+        width: calc(100% - 250px);
+        transition: margin-left 0.4s ease-in-out;
+    }
+    
+    .navbar {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+    
+    /* Responsive Styles */
+    @media (max-width: 768px) {
+        .sidebar {
+            width: 0;
+            overflow: hidden;
+        }
+
+        .main-content {
+            margin-left: 0;
+            width: 100%;
+        }
+
+        .navbar {
+            text-align: center;
+        }
+    }
+</style>
+
+<!-- JavaScript for Sidebar Toggle -->
+<script>
+    function toggleSidebar() {
+        var sidebar = document.getElementById("sidebar");
+        if (sidebar.style.width === "250px") {
+            sidebar.style.width = "0";
+        } else {
+            sidebar.style.width = "250px";
+        }
+    }
+</script>
+
 {% endblock %}
