@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-center">Confirm Bulk Allocation</h2>
+
+    <form method="POST" action="{% url 'inventory:bulk_allocate' %}">
+        {% csrf_token %}
+
+        <div class="mb-3">
+            <label for="department" class="form-label"><b>Select Department:</b></label>
+            <select name="department" id="department" class="form-select" required>
+                <option value="" selected disabled>-- Choose a Department --</option>
+                <option value="Computer Science">Computer Science</option>
+                <option value="Mechanical">Mechanical</option>
+                <option value="Electrical">Electrical</option>
+                <option value="Civil">Civil</option>
+                <!-- ✅ More departments can be added -->
+            </select>
+        </div>
+
+        <h4>Selected Items:</h4>
+        <ul class="list-group">
+            {% for item in selected_items %}
+                <li class="list-group-item">
+                    {{ item.cdsr_no }} - {{ item.cdsr_name }} ({{ item.product_quantity }})
+                    <input type="hidden" name="selected_items" value="{{ item.cdsr_id }}">
+                </li>
+            {% endfor %}
+        </ul>
+
+        <button type="submit" class="btn btn-primary mt-3">Confirm Allocation</button>
+    </form>
+</div>
+{% endblock %}

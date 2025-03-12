@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-center">CDSR Allocation</h2>
+    <!-- ✅ Filter Form -->
+    <form method="GET" id="filterForm" class="mb-3">
+        <div id="filterContainer">
+            <div class="d-flex gap-2">
+                <select name="filter_field" class="form-select">
+                    <option value="">-- Select Field --</option>
+                    {% for field in fields %}
+                    <option value="{{ field }}">{{ field|title }}</option>
+                    {% endfor %}
+                </select>
+                <!-- ✅ Hidden fields for sorting and pagination -->
+                
+                {% if filter_field %}
+                    <input type="hidden" name="filter_field" value="{{ filter_field }}">
+                    <input type="hidden" name="filter_value" value="{{ filter_value }}">
+                {% endif %}
+                {% if items.number > 1 %}
+                    <input type="hidden" name="page" value="{{ items.number }}">
+                {% endif %}
+                <input type="text" name="filter_value" class="form-control" placeholder="Enter filter value">
+                <button type="button" class="btn btn-danger remove-filter">X</button>
+            </div>
+        </div>
+        <button type="button" id="addFilter" class="btn btn-secondary mt-2">+ Add Filter</button>
+        <button type="submit" class="btn btn-primary mt-2">Apply</button>
+    </form>
+    <!-- ✅ Filter Form End -->
+    <form method="POST" action="{% url 'inventory:bulk_allocate_confirm' %}">
+        {% csrf_token %}
+        
+        
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Select</th>
+                    <th>CDSR No</th>
+                    <th>CDSR Page No</th>
+                    <th>Product Name</th>
+                    <th>Quantity</th>
+                    <th>Allocation Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in cdsr_items %}
+                <tr class="{% if item.is_allocated %}text-muted{% endif %}">
+                    <td>
+                        {% if not item.is_allocated %}
+                        <input type="checkbox" name="selected_items" value="{{ item.cdsr_id }}">
+                        {% endif %}
+                    </td>
+                    <td>{{ item.cdsr_no }}</td>
+                    <td>{{ item.cdsr_pg_no }}</td>
+                    <td>{{ item.cdsr_name }}</td>
+                    <td>{{ item.product_quantity }}</td>
+                    <td>
+                        {% if item.is_allocated %}
+                            <span class="badge bg-secondary">Allocated</span>
+                        {% else %}
+                            <a href="{% url 'inventory:allocate_form' item.cdsr_id %}" class="btn btn-sm btn-primary">Allocate</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    
+        <button type="submit" class="btn btn-success">Allocate Selected</button>
+    </form>
+    <!-- ✅ Pagination Controls -->
+    <div class="d-flex justify-content-center mt-3">
+        <nav>
+            <ul class="pagination">
+                {% if cdsr_items.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ cdsr_items.next_page_number }}{% if filter_field %}&filter_field={{ filter_field }}&filter_value={{ filter_value }}{% endif %}">First</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link"
+                    href="?page={{ cdsr_items.next_page_number }}{% if filter_field %}&filter_field={{ filter_field }}&filter_value={{ filter_value }}{% endif %}">Previous</a>
+                </li>
+                {% endif %}
+
+                <li class="page-item active">
+                    <span class="page-link">
+                        Page {{ cdsr_items.number }} of {{ cdsr_items.paginator.num_pages }}
+                    </span>
+                </li>
+
+                {% if cdsr_items.has_next %}
+                <li class="page-item">
+                    <a class="page-link"
+                        href="?page={{ cdsr_items.next_page_number }}{% if filter_field %}&filter_field={{ filter_field }}&filter_value={{ filter_value }}{% endif %}">Next</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ cdsr_items.next_page_number }}{% if filter_field %}&filter_field={{ filter_field }}&filter_value={{ filter_value }}{% endif %}">Last</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    <!-- ✅ Pagination End -->
+</div>
+{% endblock %}

@@ -1,0 +1,15 @@
+from django.urls import path
+from .views import add_department_user, admin_dashboard, department_dashboard, add_item, inventory_list , cdsr_allocation_list , allocate_form , bulk_allocate_confirm , bulk_allocate
+app_name = 'inventory'
+
+urlpatterns = [
+    path('admin-dashboard/', admin_dashboard, name='admin_dashboard'),
+    path('department-dashboard/', department_dashboard, name='department_dashboard'),
+    path('add-department-user/', add_department_user, name='add_department_user'),
+    path('add-item/', add_item, name='add_item'),  # ✅ New URL
+    path('inventory-list/', inventory_list, name='inventory_list'),  # ✅ New URL
+    path("allocation/", cdsr_allocation_list, name="cdsr_allocation_list"),
+    path("allocate/<int:cdsr_id>/", allocate_form, name="allocate_form"),
+    path("allocation/bulk-confirm/", bulk_allocate_confirm, name="bulk_allocate_confirm"),
+    path("allocation/bulk/", bulk_allocate, name="bulk_allocate"),
+]

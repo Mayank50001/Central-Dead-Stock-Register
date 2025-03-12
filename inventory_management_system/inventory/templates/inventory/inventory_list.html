@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-center">Inventory List</h2>
+    <div class="card shadow p-4">
+
+        <!-- ✅ Filter Form -->
+        <form method="GET" id="filterForm" class="mb-3">
+            <div id="filterContainer">
+                <div class="d-flex gap-2">
+                    <select name="filter_field" class="form-select">
+                        <option value="">-- Select Field --</option>
+                        {% for field in fields %}
+                        <option value="{{ field }}">{{ field|title }}</option>
+                        {% endfor %}
+                    </select>
+                    <!-- ✅ Hidden fields for sorting and pagination -->
+                    {% if sort_by %}
+                        <input type="hidden" name="sort_by" value="{{ sort_by }}">
+                        <input type="hidden" name="order" value="{{ order }}">
+                    {% endif %}
+                    {% if filter_field %}
+                        <input type="hidden" name="filter_field" value="{{ filter_field }}">
+                        <input type="hidden" name="filter_value" value="{{ filter_value }}">
+                    {% endif %}
+                    {% if items.number > 1 %}
+                        <input type="hidden" name="page" value="{{ items.number }}">
+                    {% endif %}
+                    <input type="text" name="filter_value" class="form-control" placeholder="Enter filter value">
+                    <button type="button" class="btn btn-danger remove-filter">X</button>
+                </div>
+            </div>
+            <button type="button" id="addFilter" class="btn btn-secondary mt-2">+ Add Filter</button>
+            <button type="submit" class="btn btn-primary mt-2">Apply</button>
+        </form>
+
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        {% for field in fields %}
+                        <th>
+                            <a href="?sort_by={{ field }}&order={% if sort_by == field and order == 'asc' %}desc{% else %}asc{% endif %}
+{% if filter_field %}&filter_field={{ filter_field }}&filter_value={{ filter_value }}{% endif %}"
+                                class="text-white text-decoration-none">
+                                {{ field|title }}
+                                {% if sort_by == field %}
+                                {% if order == "asc" %} ↑ {% else %} ↓ {% endif %}
+                                {% endif %}
+                            </a>
+                        </th>
+                        {% endfor %}
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        {% for field in fields %}
+                        <td>{{ item|dict_key:field }}</td>
+                        {% endfor %}
+                        <td>
+                            <a href="#" class="btn btn-info btn-sm">Edit</a>
+                            <a href="#" class="btn btn-danger btn-sm">Delete</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="{{ fields|length|add:1 }}" class="text-center">
+                            No items found.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ✅ Pagination Controls -->
+        <div class="d-flex justify-content-center mt-3">
+            <nav>
+                <ul class="pagination">
+                    {% if items.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ items.next_page_number }}{% if sort_by %}&sort_by={{ sort_by }}&order={{ order}}{% endif %}{% if filter_field %}&filter_field={{ filter_field }}&filter_value={{ filter_value }}{% endif %}"">First</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link"
+                        href="?page={{ items.next_page_number }}{% if sort_by %}&sort_by={{ sort_by }}&order={{ order }}{% endif %}{% if filter_field %}&filter_field={{ filter_field }}&filter_value={{ filter_value }}{% endif %}">Previous</a>
+                    </li>
+                    {% endif %}
+
+                    <li class="page-item active">
+                        <span class="page-link">
+                            Page {{ items.number }} of {{ items.paginator.num_pages }}
+                        </span>
+                    </li>
+
+                    {% if items.has_next %}
+                    <li class="page-item">
+                        <a class="page-link"
+                            href="?page={{ items.next_page_number }}{% if sort_by %}&sort_by={{ sort_by }}&order={{ order }}{% endif %}&filter_field={{ filter_field }}&filter_value={{ filter_value }}">
+                            >Next</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ items.next_page_number }}{% if sort_by %}&sort_by={{ sort_by }}&order={{ order }}{% endif %}{% if filter_field %}&filter_field={{ filter_field }}&filter_value={{ filter_value }}{% endif %}">
+                            >Last</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        <!-- ✅ Pagination End -->
+    </div>
+</div>
+<script>
+    document.getElementById("addFilter").addEventListener("click", function() {
+    let container = document.getElementById("filterContainer");
+    let newFilter = document.createElement("div");
+    newFilter.classList.add("d-flex", "gap-2", "mt-2");
+    newFilter.innerHTML = `
+        <select name="filter_field" class="form-select">
+            <option value="">-- Select Field --</option>
+            {% for field in fields %}
+            <option value="{{ field }}">{{ field|title }}</option>
+            {% endfor %}
+        </select>
+        <input type="text" name="filter_value" class="form-control" placeholder="Enter filter value">
+        <button type="button" class="btn btn-danger remove-filter">X</button>
+    `;
+    container.appendChild(newFilter);
+});
+
+document.addEventListener("click", function(event) {
+    if (event.target.classList.contains("remove-filter")) {
+        event.target.parentElement.remove();
+    }
+});
+
+</script>
+
+
+
+{% endblock %}
