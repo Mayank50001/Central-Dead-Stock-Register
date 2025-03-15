@@ -7,6 +7,7 @@
     <form method="POST" action="{% url 'inventory:bulk_allocate' %}">
         {% csrf_token %}
 
+        <!-- Department Selection -->
         <div class="mb-3">
             <label for="department" class="form-label"><b>Select Department:</b></label>
             <select name="department" id="department" class="form-select" required>
@@ -19,15 +20,36 @@
             </select>
         </div>
 
+        <!-- Selected Items List -->
         <h4>Selected Items:</h4>
-        <ul class="list-group">
-            {% for item in selected_items %}
-                <li class="list-group-item">
-                    {{ item.cdsr_no }} - {{ item.cdsr_name }} ({{ item.product_quantity }})
-                    <input type="hidden" name="selected_items" value="{{ item.cdsr_id }}">
-                </li>
-            {% endfor %}
-        </ul>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>CDSR No</th>
+                    <th>Product Name</th>
+                    <th>Available Quantity</th>
+                    <th>Accepted Quantity</th>
+                    <th>DDSR No</th>
+                    <th>DDSR Page No</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in selected_items %}
+                <tr>
+                    <td>{{ item.cdsr_no }}</td>
+                    <td>{{ item.cdsr_name }}</td>
+                    <td>{{ item.remaining_quantity }}</td>
+                    <td>
+                        <input type="hidden" name="selected_items" value="{{ item.cdsr_id }}">
+                        <input type="number" class="form-control" name="accepted_product_quantity" required min="1" max="{{ item.remaining_quantity }}">
+                        <small class="text-muted">Max: {{ item.remaining_quantity }}</small>
+                    </td>
+                    <td><input type="number" class="form-control" name="ddsr_no" required></td>
+                    <td><input type="number" class="form-control" name="ddsr_pg_no" required></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
 
         <button type="submit" class="btn btn-primary mt-3">Confirm Allocation</button>
     </form>

@@ -11,18 +11,23 @@
 
             <ul class="nav flex-column mt-3">
                 <li class="nav-item">
-                    <a href="{% url 'add_department_user' %}" class="nav-link">
+                    <a href="{% url 'inventory:add_department_user' %}" class="nav-link">
                         <i class="fas fa-user-plus me-2"></i> Add Department User
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="#" class="nav-link">
-                        <i class="fas fa-chart-line me-2"></i> View Inventory Reports
+                    <a href="{% url 'inventory:inventory_list' %}" class="nav-link">
+                        <i class="fas fa-chart-line me-2"></i> Inventory List
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="#" class="nav-link">
-                        <i class="fas fa-boxes me-2"></i> Manage Stock
+                    <a href="{% url 'inventory:add_item' %}" class="nav-link">
+                        <i class="fas fa-chart-line me-2"></i> Add Item
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'inventory:cdsr_allocation_list' %}" class="nav-link">
+                        <i class="fas fa-boxes me-2"></i> Allocate Stock
                     </a>
                 </li>
             </ul>
@@ -49,9 +54,9 @@
                 <!-- Login/Logout Button (Right Aligned) -->
                 <div>
                     {% if user.is_authenticated %}
-                        <a href="{% url 'logout' %}" class="btn btn-danger">Logout</a>
+                        <a href="{% url 'accounts:logout' %}" class="btn btn-danger">Logout</a>
                     {% else %}
-                        <a href="{% url 'login' %}" class="btn btn-success">Login</a>
+                        <a href="{% url 'accounts:login' %}" class="btn btn-success">Login</a>
                     {% endif %}
                 </div>
             </div>

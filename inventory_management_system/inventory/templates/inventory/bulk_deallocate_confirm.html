@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-center">Confirm Bulk Deallocation</h2>
+
+    <form method="POST" action="{% url 'inventory:bulk_deallocate' %}">
+        {% csrf_token %}
+
+        {% for item in items_with_allocations %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4>{{ item.cdsr_item.product_description }}</h4>
+                <small class="text-muted">CDSR No: {{ item.cdsr_item.cdsr_no }}, Page No: {{ item.cdsr_item.cdsr_pg_no }}</small>
+            </div>
+            <div class="card-body">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Department</th>
+                            <th>DDSR No</th>
+                            <th>Current Allocation</th>
+                            <th>Quantity to Deallocate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for allocation in item.allocations %}
+                        <tr>
+                            <td>{{ allocation.department }}</td>
+                            <td>{{ allocation.ddsr_no }}</td>
+                            <td>{{ allocation.accepted_product_quantity }}</td>
+                            <td>
+                                <div class="input-group">
+                                    <input type="number" 
+                                           class="form-control deallocation-quantity" 
+                                           name="deallocation_quantity_{{ allocation.ddsr_id }}"
+                                           min="0"
+                                           max="{{ allocation.accepted_product_quantity }}"
+                                           value="0"
+                                           data-max="{{ allocation.accepted_product_quantity }}">
+                                    <span class="input-group-text">units</span>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endfor %}
+
+        <div class="alert alert-info">
+            <p><strong>Note:</strong> For each allocation, specify how many units you want to deallocate. Leave 0 if you don't want to deallocate from that department.</p>
+        </div>
+
+        <div class="d-flex justify-content-between">
+            <a href="{% url 'inventory:cdsr_allocation_list' %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-danger" id="confirmDeallocateBtn">Confirm Deallocation</button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const confirmBtn = document.getElementById('confirmDeallocateBtn');
+
+    // Validate quantities before submission
+    form.addEventListener('submit', function(e) {
+        const inputs = document.querySelectorAll('.deallocation-quantity');
+        let hasValidQuantity = false;
+        let hasInvalidQuantity = false;
+
+        inputs.forEach(input => {
+            const value = parseInt(input.value) || 0;
+            const max = parseInt(input.dataset.max);
+
+            if (value > 0) {
+                hasValidQuantity = true;
+            }
+            if (value > max) {
+                hasInvalidQuantity = true;
+            }
+        });
+
+        if (!hasValidQuantity) {
+            e.preventDefault();
+            alert('Please specify at least one quantity to deallocate.');
+        }
+        if (hasInvalidQuantity) {
+            e.preventDefault();
+            alert('Cannot deallocate more than the allocated quantity.');
+        }
+    });
+
+    // Add input validation
+    document.querySelectorAll('.deallocation-quantity').forEach(input => {
+        input.addEventListener('input', function() {
+            const value = parseInt(this.value) || 0;
+            const max = parseInt(this.dataset.max);
+
+            if (value < 0) {
+                this.value = 0;
+            } else if (value > max) {
+                this.value = max;
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 
