@@ -135,7 +135,7 @@ def cdsr_allocation_list(request):
         cdsr_items = [item for item in cdsr_items if not item.is_allocated]
 
     # ✅ Pagination
-    paginator = Paginator(cdsr_items, 50)  # 50 items per page
+    paginator = Paginator(cdsr_items, 25)  # 50 items per page
     page_number = request.GET.get("page")
     cdsr_item_list = paginator.get_page(page_number)
 
