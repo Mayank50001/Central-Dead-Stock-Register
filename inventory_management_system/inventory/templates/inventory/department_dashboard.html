@@ -3,7 +3,7 @@
 {% block content %}
 <div class="container-fluid d-flex">
     <!-- Sidebar -->
-    <nav id="sidebar" class="sidebar">
+    <!-- <nav id="sidebar" class="sidebar">
         <button class="btn btn-outline-light d-md-none mb-3" onclick="toggleSidebar()">☰</button>
         <div class="sidebar-content">
             <h4 class="text-center mt-3 text-light">Welcome to Department Dashboard</h4>
@@ -14,28 +14,46 @@
                         <i class="fas fa-box-open me-2"></i> View Allocated Stock
                     </a>
                 </li>
+                
                 <li class="nav-item">
-                    <a href="#" class="nav-link">
-                        <i class="fas fa-hand-holding me-2"></i> Request More Stock
+                    <a href="{% url 'inventory:department_inventory_list' %}" class="nav-link">
+                        <i class="fas fa-box-open me-2"></i> View Stock
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav> -->
+    <nav id="sidebar" class="sidebar">
+        <div class="sidebar-content">
+            <div class="department-info text-center mb-4">
+                <i class="fas fa-university department-icon"></i>
+                <h4 class="text-light mt-3">{{ department_name }}</h4>
+            </div>
+            <hr class="bg-light">
+            <ul class="nav flex-column mt-3">
+                <li class="nav-item">
+                    <a href="{% url 'inventory:department_inventory_list' %}" class="nav-link">
+                        <i class="fas fa-box-open me-2"></i> View Stock
                     </a>
                 </li>
             </ul>
         </div>
     </nav>
 
-    <!-- Main Content -->
     <div class="main-content flex-grow-1">
-        <nav class="navbar navbar-expand-lg navbar-light bg-light shadow" margin="0px">
+        <!-- Navbar -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow">
             <div class="container-fluid d-flex justify-content-between align-items-center">
-                  <!-- Centered Inventory Management System Name -->
-                  <span class="navbar-brand fw-bold mx-auto" style="
-                  font-size: 1.8rem;
-                  color: navy;
-                  font-weight: bold;
-                  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-              ">
-                              Inventory Management System
-                          </span>
+                <span class="navbar-brand fw-bold mx-auto" style="
+                    font-size: 1.8rem;
+                    background: linear-gradient(to right, #1DB954, #17A2B8);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    font-weight: bold;
+                    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+                ">
+                    Department Inventory Dashboard
+                </span>
                 <div>
                     {% if user.is_authenticated %}
                         <a href="{% url 'accounts:logout' %}" class="btn btn-danger">Logout</a>
@@ -45,80 +63,306 @@
                 </div>
             </div>
         </nav>
+
+        <!-- Dashboard Content -->
+        <div class="container-fluid mt-4">
+            <!-- Stats Cards Row -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="stat-card bg-gradient-primary">
+                        <div class="stat-card-body">
+                            <i class="fas fa-boxes stat-icon"></i>
+                            <h5>Total Items</h5>
+                            <h2>{{ total_items }}</h2>
+                            <p class="trend">
+                                <i class="fas fa-arrow-up"></i>
+                                <span>{{ new_items_percent }}% from last month</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card bg-gradient-success">
+                        <div class="stat-card-body">
+                            <i class="fas fa-cubes stat-icon"></i>
+                            <h5>Total Quantity</h5>
+                            <h2>{{ total_quantity }}</h2>
+                            <p class="trend">
+                                <i class="fas fa-arrow-up"></i>
+                                <span>{{ quantity_percent }}% total stock</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card bg-gradient-info">
+                        <div class="stat-card-body">
+                            <i class="fas fa-rupee-sign stat-icon"></i>
+                            <h5>Total Value</h5>
+                            <h2>₹{{ total_value }}</h2>
+                            <p class="trend">
+                                <i class="fas fa-arrow-up"></i>
+                                <span>{{ value_percent }}% from last year</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card bg-gradient-warning">
+                        <div class="stat-card-body">
+                            <i class="fas fa-clock stat-icon"></i>
+                            <h5>Recent Allocations</h5>
+                            <h2>{{ recent_allocations }}</h2>
+                            <p class="trend">Last 30 days</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="chart-card">
+                        <div class="chart-card-header">
+                            <h5>Stock Distribution by Category</h5>
+                        </div>
+                        <div class="chart-card-body">
+                            <canvas id="categoryPieChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="chart-card">
+                        <div class="chart-card-header">
+                            <h5>Monthly Allocation Trend</h5>
+                        </div>
+                        <div class="chart-card-body">
+                            <canvas id="monthlyLineChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Allocations Table -->
+            <div class="table-card">
+                <div class="table-card-header">
+                    <h5>Recent Stock Allocations</h5>
+                </div>
+                <div class="table-card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Item Name</th>
+                                    <th>Category</th>
+                                    <th>Quantity</th>
+                                    <th>Value</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for allocation in recent_items %}
+                                <tr>
+                                    <td>{{ allocation.date_of_receive }}</td>
+                                    <td>{{ allocation.product_description }}</td>
+                                    <td>{{ allocation.product_category }}</td>
+                                    <td>{{ allocation.accepted_product_quantity }}</td>
+                                    <td>₹{{ allocation.total_cost }}</td>
+                                    <td>
+                                        <span class="badge bg-success">Active</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
 <!-- Sidebar CSS -->
 <style>
+    /* Sidebar Styles */
     .sidebar {
         position: fixed;
         left: 0;
         top: 0;
         width: 250px;
         height: 100vh;
-        background-color: #121212;
+        background: linear-gradient(180deg, #1a1a1a 0%, #2d2d2d 100%);
         color: white;
-        padding-top: 20px;
         z-index: 1000;
-        transition: all 0.3s ease-in-out;
     }
     
-    .sidebar-content {
-        padding: 20px;
+    .department-icon {
+        font-size: 3rem;
+        color: #1DB954;
     }
     
     .sidebar .nav-link {
-        color: white;
-        padding: 12px;
-        display: block;
-        font-size: 18px;
-        text-decoration: none;
+        color: #ffffff;
+        padding: 12px 20px;
+        border-radius: 8px;
+        margin: 4px 0;
+        transition: all 0.3s ease;
     }
-    
-    .sidebar .nav-link:hover {
-        background: #1DB954;
-        border-radius: 5px;
+
+    .sidebar .nav-link:hover, .sidebar .nav-link.active {
+        background: linear-gradient(45deg, #1DB954, #17A2B8);
+        transform: translateX(10px);
     }
-    
+
+    /* Main Content Styles */
     .main-content {
         margin-left: 250px;
-        width: calc(100% - 250px);
-        transition: margin-left 0.4s ease-in-out;
+        background-color: #f4f6f9;
+        min-height: 100vh;
     }
-    
-    .navbar {
-        width: 100%;
-        flex-wrap: wrap;
+
+    /* Stat Cards */
+    .stat-card {
+        border-radius: 15px;
+        padding: 20px;
+        color: white;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
     }
-    
-    /* Responsive Styles */
-    @media (max-width: 768px) {
-        .sidebar {
-            width: 0;
-            overflow: hidden;
-        }
 
-        .main-content {
-            margin-left: 0;
-            width: 100%;
-        }
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
 
-        .navbar {
-            text-align: center;
-        }
+    .bg-gradient-primary {
+        background: linear-gradient(45deg, #4e73df, #224abe);
+    }
+
+    .bg-gradient-success {
+        background: linear-gradient(45deg, #1cc88a, #13855c);
+    }
+
+    .bg-gradient-info {
+        background: linear-gradient(45deg, #36b9cc, #258391);
+    }
+
+    .bg-gradient-warning {
+        background: linear-gradient(45deg, #f6c23e, #dda20a);
+    }
+
+    .stat-icon {
+        font-size: 2rem;
+        margin-bottom: 15px;
+    }
+
+    .trend {
+        font-size: 0.8rem;
+        margin-top: 10px;
+    }
+
+    /* Chart Cards */
+    .chart-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+
+    .chart-card-header {
+        padding: 15px 20px;
+        border-bottom: 1px solid #e3e6f0;
+    }
+
+    .chart-card-body {
+        padding: 20px;
+        height: 300px;
+    }
+
+    /* Table Card */
+    .table-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .table-card-header {
+        padding: 15px 20px;
+        border-bottom: 1px solid #e3e6f0;
+    }
+
+    .table-card-body {
+        padding: 20px;
+    }
+
+    .table th {
+        border-top: none;
+        background-color: #f8f9fc;
+    }
+
+    .badge {
+        padding: 8px 12px;
+        border-radius: 30px;
     }
 </style>
 
-<!-- JavaScript for Sidebar Toggle -->
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    function toggleSidebar() {
-        var sidebar = document.getElementById("sidebar");
-        if (sidebar.style.width === "250px") {
-            sidebar.style.width = "0";
-        } else {
-            sidebar.style.width = "250px";
+    // Category Distribution Pie Chart
+    const categoryCtx = document.getElementById('categoryPieChart').getContext('2d');
+    new Chart(categoryCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ category_labels|safe }},
+            datasets: [{
+                data: {{ category_data|safe }},
+                backgroundColor: [
+                    '#4e73df',
+                    '#1cc88a',
+                    '#36b9cc',
+                    '#f6c23e',
+                    '#e74a3b'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right'
+                }
+            }
         }
-    }
+    });
+
+    // Monthly Trend Line Chart
+    const monthlyCtx = document.getElementById('monthlyLineChart').getContext('2d');
+    new Chart(monthlyCtx, {
+        type: 'line',
+        data: {
+            labels: {{ monthly_labels|safe }},
+            datasets: [{
+                label: 'Allocations',
+                data: {{ monthly_data|safe }},
+                borderColor: '#1cc88a',
+                tension: 0.4,
+                fill: true,
+                backgroundColor: 'rgba(28, 200, 138, 0.1)'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
 </script>
 
 {% endblock %}

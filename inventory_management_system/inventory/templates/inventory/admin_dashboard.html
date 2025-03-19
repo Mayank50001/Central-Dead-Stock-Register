@@ -60,6 +60,116 @@
                 </div>
             </div>
         </nav>
+
+        <!-- Dashboard Content -->
+        <div class="container-fluid mt-4">
+            <!-- Stats Cards Row -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">Total Items</h5>
+                            <h2 class="card-text">{{ total_items }}</h2>
+                            <p class="mb-0"><small>Active Items: {{ active_items }}</small></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">Total Allocations</h5>
+                            <h2 class="card-text">{{ total_allocations }}</h2>
+                            <p class="mb-0"><small>This Month: {{ monthly_allocations }}</small></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-dark">
+                        <div class="card-body">
+                            <h5 class="card-title">Departments</h5>
+                            <h2 class="card-text">{{ total_departments }}</h2>
+                            <p class="mb-0"><small>Active: {{ active_departments }}</small></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">Total Value</h5>
+                            <h2 class="card-text">₹{{ total_value }}</h2>
+                            <p class="mb-0"><small>This Year: ₹{{ yearly_value }}</small></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Stock Distribution by Department</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="departmentPieChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Monthly Allocations</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="monthlyBarChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity Table -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Recent Stock Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Item</th>
+                                    <th>Action</th>
+                                    <th>Department</th>
+                                    <th>Quantity</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for action in recent_actions %}
+                                <tr>
+                                    <td>{{ action.date }}</td>
+                                    <td>{{ action.item_name }}</td>
+                                    <td>
+                                        <span class="badge {% if action.action_type == 'allocation' %}bg-success{% elif action.action_type == 'deallocation' %}bg-danger{% else %}bg-warning{% endif %}">
+                                            {{ action.action_type|title }}
+                                        </span>
+                                    </td>
+                                    <td>{{ action.department }}</td>
+                                    <td>{{ action.quantity }}</td>
+                                    <td>
+                                        <span class="badge {% if action.status == 'completed' %}bg-success{% else %}bg-warning{% endif %}">
+                                            {{ action.status|title }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -88,11 +198,32 @@
         display: block;
         font-size: 18px;
         text-decoration: none;
+        transition: all 0.3s ease;
     }
 
     .sidebar .nav-link:hover {
-        background: #1DB954; /* Green effect */
+        background: #1DB954;
         border-radius: 5px;
+        transform: translateX(10px);
+    }
+
+    .card {
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+    }
+
+    .table {
+        margin-bottom: 0;
+    }
+
+    .badge {
+        padding: 8px 12px;
+        border-radius: 20px;
     }
 
     /* Main Content */
@@ -110,4 +241,61 @@
 }
 
 </style>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Department Distribution Pie Chart
+    const departmentCtx = document.getElementById('departmentPieChart').getContext('2d');
+    new Chart(departmentCtx, {
+        type: 'pie',
+        data: {
+            labels: {{ department_labels|safe }},
+            datasets: [{
+                data: {{ department_data|safe }},
+                backgroundColor: [
+                    '#FF6384',
+                    '#36A2EB',
+                    '#FFCE56',
+                    '#4BC0C0',
+                    '#9966FF'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right'
+                }
+            }
+        }
+    });
+
+    // Monthly Allocations Bar Chart
+    const monthlyCtx = document.getElementById('monthlyBarChart').getContext('2d');
+    new Chart(monthlyCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ monthly_labels|safe }},
+            datasets: [{
+                label: 'Allocations',
+                data: {{ monthly_data|safe }},
+                backgroundColor: '#1DB954',
+                borderColor: '#1DB954',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
 {% endblock %}

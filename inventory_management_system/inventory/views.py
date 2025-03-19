@@ -8,6 +8,11 @@ from .models import CDSR , DDSR  # ✅ CDSR Model Import
 from .decorators import role_required
 from django.core.paginator import Paginator
 from django.utils.timezone import now
+from datetime import timedelta
+import csv
+from django.http import HttpResponse
+from django.utils.text import slugify
+from datetime import datetime
 
 
 @login_required
@@ -31,14 +36,208 @@ def add_department_user(request):
 @login_required
 @role_required(allowed_roles=['admin'])
 def admin_dashboard(request):
-    return render(request, "inventory/admin_dashboard.html")
-
+    # Basic Stats
+    total_items = CDSR.objects.count()
+    active_items = CDSR.objects.filter(writeoff_status__isnull=True).count()
+    total_allocations = DDSR.objects.count()
+    
+    # Get unique departments and count active ones
+    departments = DDSR.objects.values_list('department', flat=True).distinct()
+    total_departments = len(departments)
+    active_departments = DDSR.objects.values('department').distinct().count()
+    
+    # Calculate total value
+    total_value = CDSR.objects.aggregate(total=Sum('total_cost'))['total'] or 0
+    current_year = now().year
+    yearly_value = CDSR.objects.filter(purchase_year=str(current_year)).aggregate(total=Sum('total_cost'))['total'] or 0
+    
+    # Monthly allocations (including reallocations and deallocations)
+    current_month = now().month
+    monthly_allocations = DDSR.objects.filter(date_of_receive__month=current_month).count()
+    
+    # Department Distribution Data for Pie Chart
+    department_data = []
+    department_labels = []
+    for dept in departments:
+        count = DDSR.objects.filter(department=dept).count()
+        if count > 0:
+            department_data.append(count)
+            department_labels.append(dept)
+    
+    # Monthly Allocation Data for Bar Chart
+    months = []
+    monthly_data = []
+    for i in range(6, -1, -1):  # Last 6 months
+        month = (now() - timedelta(days=i*30)).strftime('%B')
+        month_num = (now() - timedelta(days=i*30)).month
+        months.append(month)
+        count = DDSR.objects.filter(date_of_receive__month=month_num).count()
+        monthly_data.append(count)
+    
+    # Recent Stock Actions
+    recent_actions = []
+    
+    # Get all DDSR entries ordered by date
+    all_ddsr_entries = DDSR.objects.order_by('date_of_receive')
+    
+    # Track the latest state for each CDSR-Department combination
+    allocation_state = {}
+    
+    # Process all entries chronologically to track changes
+    for ddsr in all_ddsr_entries:
+        key = f"{ddsr.cdsr_table_id}_{ddsr.department}"
+        
+        if key not in allocation_state:
+            # First allocation for this combination
+            action = {
+                'date': ddsr.date_of_receive.strftime('%Y-%m-%d'),
+                'item_name': ddsr.product_description,
+                'action_type': 'allocation',
+                'department': ddsr.department,
+                'quantity': ddsr.accepted_product_quantity,
+                'status': 'completed'
+            }
+            recent_actions.append(action)
+            allocation_state[key] = ddsr.accepted_product_quantity
+        else:
+            # Compare with previous state
+            prev_quantity = allocation_state[key]
+            current_quantity = ddsr.accepted_product_quantity
+            
+            if current_quantity > prev_quantity:
+                action_type = 'reallocation (increased)'
+            elif current_quantity < prev_quantity:
+                action_type = 'deallocation'
+            else:
+                action_type = 'reallocation'
+                
+            action = {
+                'date': ddsr.date_of_receive.strftime('%Y-%m-%d'),
+                'item_name': ddsr.product_description,
+                'action_type': action_type,
+                'department': ddsr.department,
+                'quantity': current_quantity,
+                'status': 'completed'
+            }
+            recent_actions.append(action)
+            allocation_state[key] = current_quantity
+    
+    # Add complete deallocations (where entries were deleted)
+    deleted_allocations = []
+    for key, last_quantity in allocation_state.items():
+        cdsr_id, department = key.split('_')
+        # Check if this allocation still exists
+        if not DDSR.objects.filter(cdsr_table_id=cdsr_id, department=department).exists():
+            # This was a complete deallocation
+            action = {
+                'date': now().strftime('%Y-%m-%d'),  # Use current date as we don't have the exact deletion date
+                'item_name': CDSR.objects.get(cdsr_id=cdsr_id).product_description,
+                'action_type': 'complete deallocation',
+                'department': department,
+                'quantity': 0,
+                'status': 'completed'
+            }
+            deleted_allocations.append(action)
+    
+    # Add deleted allocations to recent actions
+    recent_actions.extend(deleted_allocations)
+    
+    # Sort all actions by date (newest first) and keep only the 10 most recent
+    recent_actions.sort(key=lambda x: x['date'], reverse=True)
+    recent_actions = recent_actions[:10]
+    
+    context = {
+        'total_items': total_items,
+        'active_items': active_items,
+        'total_allocations': total_allocations,
+        'monthly_allocations': monthly_allocations,
+        'total_departments': total_departments,
+        'active_departments': active_departments,
+        'total_value': "{:,.2f}".format(total_value),
+        'yearly_value': "{:,.2f}".format(yearly_value),
+        'department_labels': department_labels,
+        'department_data': department_data,
+        'monthly_labels': months,
+        'monthly_data': monthly_data,
+        'recent_actions': recent_actions
+    }
+    
+    return render(request, "inventory/admin_dashboard.html", context)
 
 # Department Dashboard View
 @login_required
 @role_required(allowed_roles=['department'])
 def department_dashboard(request):
-    return render(request, "inventory/department_dashboard.html")
+    # Get the department name from the logged-in user
+    department_name = request.user.department
+
+    # Get all DDSR entries for this department
+    department_items = DDSR.objects.filter(department=department_name)
+
+    # Basic Stats
+    total_items = department_items.count()
+    total_quantity = department_items.aggregate(Sum('accepted_product_quantity'))['accepted_product_quantity__sum'] or 0
+    total_value = sum(float(item.total_cost) for item in department_items) if department_items else 0
+
+    # Calculate percentage changes
+    last_month = now() - timedelta(days=30)
+    last_year = now() - timedelta(days=365)
+    
+    new_items = department_items.filter(date_of_receive__gte=last_month).count()
+    new_items_percent = round((new_items / total_items * 100) if total_items > 0 else 0, 1)
+    
+    old_quantity = department_items.filter(date_of_receive__lt=last_month).aggregate(Sum('accepted_product_quantity'))['accepted_product_quantity__sum'] or 0
+    quantity_percent = round((total_quantity / (old_quantity + total_quantity) * 100) if (old_quantity + total_quantity) > 0 else 0, 1)
+    
+    last_year_value = sum(float(item.total_cost) for item in department_items.filter(date_of_receive__lt=last_year)) if department_items else 0
+    value_percent = round(((total_value - last_year_value) / last_year_value * 100) if last_year_value > 0 else 0, 1)
+
+    # Recent allocations in last 30 days
+    recent_allocations = department_items.filter(date_of_receive__gte=last_month).count()
+
+    # Category Distribution Data
+    category_data = []
+    category_labels = []
+    categories = department_items.values_list('product_category', flat=True).distinct()
+    for category in categories:
+        count = department_items.filter(product_category=category).count()
+        if count > 0:
+            category_data.append(count)
+            category_labels.append(category)
+
+    # Monthly Trend Data (last 6 months)
+    monthly_data = []
+    monthly_labels = []
+    for i in range(6, -1, -1):
+        month_date = now() - timedelta(days=i*30)
+        month_name = month_date.strftime('%B')
+        monthly_labels.append(month_name)
+        count = department_items.filter(
+            date_of_receive__year=month_date.year,
+            date_of_receive__month=month_date.month
+        ).count()
+        monthly_data.append(count)
+
+    # Recent Items (last 10 allocations)
+    recent_items = department_items.order_by('-date_of_receive')[:10]
+
+    context = {
+        'department_name': department_name,
+        'total_items': total_items,
+        'total_quantity': total_quantity,
+        'total_value': "{:,.2f}".format(total_value),
+        'recent_allocations': recent_allocations,
+        'new_items_percent': new_items_percent,
+        'quantity_percent': quantity_percent,
+        'value_percent': value_percent,
+        'category_labels': category_labels,
+        'category_data': category_data,
+        'monthly_labels': monthly_labels,
+        'monthly_data': monthly_data,
+        'recent_items': recent_items,
+    }
+
+    return render(request, "inventory/department_dashboard.html", context)
 
 
 @login_required
@@ -452,3 +651,63 @@ def bulk_deallocate(request):
 
     return redirect("inventory:cdsr_allocation_list")
 
+@login_required
+@role_required(allowed_roles=['department'])
+def department_inventory_list(request):
+    # Get the department name from the logged-in user
+    department_name = request.user.department
+    
+    # Get all DDSR entries for this department
+    items_list = DDSR.objects.filter(department=department_name)
+    fields = [field.name for field in DDSR._meta.fields]
+
+    # Sorting Logic
+    sort_by = request.GET.get("sort_by", "ddsr_id")
+    order = request.GET.get("order", "asc")
+    if order == "desc":
+        sort_by = f"-{sort_by}"
+    items_list = items_list.order_by(sort_by)
+
+    # Filtering Logic
+    filter_queries = Q()
+    filter_fields = request.GET.getlist("filter_field")
+    filter_values = request.GET.getlist("filter_value")
+
+    for field, value in zip(filter_fields, filter_values):
+        if field and value:
+            filter_queries &= Q(**{f"{field}__icontains": value})
+
+    items_list = items_list.filter(filter_queries)
+
+    # Export to CSV if requested
+    if request.GET.get('export') == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        response['Content-Disposition'] = f'attachment; filename="{slugify(department_name)}_inventory_{timestamp}.csv"'
+        
+        writer = csv.writer(response)
+        # Write headers
+        writer.writerow([field.replace('_', ' ').title() for field in fields])
+        
+        # Write data
+        for item in items_list:
+            writer.writerow([getattr(item, field) for field in fields])
+        
+        return response
+
+    # Pagination
+    paginator = Paginator(items_list, 50)
+    page_number = request.GET.get("page")
+    items = paginator.get_page(page_number)
+
+    context = {
+        "items": items,
+        "fields": fields,
+        "department_name": department_name,
+        "sort_by": request.GET.get("sort_by", ""),
+        "order": request.GET.get("order", "asc"),
+        "filter_fields": filter_fields,
+        "filter_values": filter_values
+    }
+
+    return render(request, "inventory/department_inventory_list.html", context)
