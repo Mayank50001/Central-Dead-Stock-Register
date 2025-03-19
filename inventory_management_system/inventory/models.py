@@ -39,6 +39,7 @@ class DDSR(models.Model):
     total_cost = models.CharField(max_length=255, null=True, blank=True)
     writeoff_status = models.CharField(max_length=255, null=True, blank=True)
     year_of_buy = models.CharField(max_length=255, null=True, blank=True)
+    
 
 class ConsumeCDSR(models.Model):
     consume_cdsr_id = models.BigAutoField(primary_key=True)

@@ -4,44 +4,301 @@
 <div class="container mt-4">
     <h2 class="text-center">Allocate CDSR Item</h2>
 
-    <form method="POST">
-        {% csrf_token %}
-        <div class="mb-3">
-            <label class="form-label">CDSR No</label>
-            <input type="text" class="form-control" value="{{ cdsr_item.cdsr_no }}" readonly>
+    <!-- Item Details Card -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4>Item Details</h4>
         </div>
-        
-        <div class="mb-3">
-            <label class="form-label">CDSR Page No</label>
-            <input type="text" class="form-control" value="{{ cdsr_item.cdsr_pg_no }}" readonly>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>CDSR No:</strong> {{ cdsr_item.cdsr_no }}</p>
+                    <p><strong>CDSR Page No:</strong> {{ cdsr_item.cdsr_pg_no }}</p>
+                    <p><strong>Product Name:</strong> {{ cdsr_item.product_description }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Total Quantity:</strong> {{ cdsr_item.product_quantity }}</p>
+                    <p><strong>Total Allocated:</strong> {{ total_allocated }}</p>
+                    <p><strong>Remaining Unallocated:</strong> {{ true_remaining }}</p>
+                </div>
+            </div>
         </div>
+    </div>
 
-        <div class="mb-3">
-            <label class="form-label">Product Name</label>
-            <input type="text" class="form-control" value="{{ cdsr_item.cdsr_name }}" readonly>
+    <!-- Current Allocations Card -->
+    {% if existing_allocations %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4>Current Allocations</h4>
         </div>
-
-        <div class="mb-3">
-            <label class="form-label">Quantity</label>
-            <input type="text" class="form-control" value="{{ cdsr_item.product_quantity }}" readonly>
+        <div class="card-body">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Department</th>
+                        <th>DDSR No</th>
+                        <th>DDSR Page No</th>
+                        <th>Allocated Quantity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for alloc in existing_allocations %}
+                    <tr>
+                        <td>{{ alloc.department }}</td>
+                        <td>{{ alloc.ddsr_no }}</td>
+                        <td>{{ alloc.ddsr_pg_no }}</td>
+                        <td>{{ alloc.accepted_product_quantity }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
+    </div>
+    {% endif %}
 
-        <div class="mb-3">
-            <label class="form-label">Department</label>
-            <input type="text" class="form-control" name="department" required>
+    <!-- Allocation Form -->
+    <div class="card">
+        <div class="card-header">
+            <h4>Allocation Form</h4>
         </div>
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                
+                <!-- Allocation Type Selection -->
+                <div class="mb-3">
+                    <label class="form-label"><strong>Select Allocation Type:</strong></label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="allocation_type" value="new" id="newAllocation" checked>
+                        <label class="form-check-label" for="newAllocation">
+                            New Allocation (Remaining: {{ true_remaining }})
+                        </label>
+                    </div>
+                    {% if existing_allocations %}
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="allocation_type" value="reallocation" id="reallocation">
+                        <label class="form-check-label" for="reallocation">
+                            Reallocation from Existing Departments
+                        </label>
+                    </div>
+                    {% endif %}
+                </div>
 
-        <div class="mb-3">
-            <label class="form-label">DDSR No</label>
-            <input type="number" class="form-control" name="ddsr_no" required>
+                <!-- Reallocation Selection -->
+                <div id="reallocationSection" class="mb-3" style="display: none;">
+                    <label class="form-label"><strong>Select Departments and Quantities to Reallocate From:</strong></label>
+                    {% for alloc in existing_allocations %}
+                    <div class="card mb-2">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input reallocation-checkbox" type="checkbox" 
+                                               name="reallocation_from" value="{{ alloc.ddsr_id }}" 
+                                               data-quantity="{{ alloc.accepted_product_quantity }}"
+                                               data-input-id="realloc_qty_{{ alloc.ddsr_id }}">
+                                        <label class="form-check-label">
+                                            {{ alloc.department }} (Max: {{ alloc.accepted_product_quantity }} units)
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="input-group">
+                                        <span class="input-group-text">Quantity</span>
+                                        <input type="number" class="form-control reallocation-quantity" 
+                                               id="realloc_qty_{{ alloc.ddsr_id }}"
+                                               name="reallocation_quantity_{{ alloc.ddsr_id }}"
+                                               min="1" max="{{ alloc.accepted_product_quantity }}"
+                                               disabled
+                                               data-max="{{ alloc.accepted_product_quantity }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    <p class="text-info mt-2">Total Selected for Reallocation: <span id="totalSelected">0</span> units</p>
+                </div>
+
+                <!-- Common Form Fields -->
+                <div id="departmentAllocations">
+                    <div class="department-entry card mb-3">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="mb-3">
+                                        <label class="form-label">Department</label>
+                                        <input type="text" class="form-control" name="departments[]" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="mb-3">
+                                        <label class="form-label">DDSR No</label>
+                                        <input type="number" class="form-control" name="ddsr_nos[]" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="mb-3">
+                                        <label class="form-label">DDSR Page No</label>
+                                        <input type="number" class="form-control" name="ddsr_pg_nos[]" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="mb-3">
+                                        <label class="form-label">Quantity</label>
+                                        <input type="number" class="form-control allocation-quantity" 
+                                               name="quantities[]" required min="1">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" class="btn btn-info mb-3" id="addDepartment">
+                    Add Another Department
+                </button>
+
+                <div class="alert alert-info" id="quantityInfo">
+                    <p>Total Quantity to Allocate: <span id="totalToAllocate">0</span></p>
+                    <p id="newAllocationInfo" style="display: none">
+                        Available for New Allocation: {{ true_remaining }}
+                    </p>
+                    <p id="reallocationInfo" style="display: none">
+                        Available for Reallocation: <span id="reallocationAvailable">0</span>
+                    </p>
+                </div>
+
+                <button type="submit" class="btn btn-success" id="submitBtn">Allocate</button>
+                <a href="{% url 'inventory:cdsr_allocation_list' %}" class="btn btn-secondary">Cancel</a>
+            </form>
         </div>
-
-        <div class="mb-3">
-            <label class="form-label">DDSR Page No</label>
-            <input type="number" class="form-control" name="ddsr_pg_no" required>
-        </div>
-
-        <button type="submit" class="btn btn-success">Allocate</button>
-    </form>
+    </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const allocationType = document.getElementsByName('allocation_type');
+    const reallocationSection = document.getElementById('reallocationSection');
+    const totalSelectedSpan = document.getElementById('totalSelected');
+    const reallocationCheckboxes = document.querySelectorAll('.reallocation-checkbox');
+    const trueRemaining = {{ true_remaining }};
+    const departmentAllocations = document.getElementById('departmentAllocations');
+    const addDepartmentBtn = document.getElementById('addDepartment');
+    const submitBtn = document.getElementById('submitBtn');
+    const totalToAllocate = document.getElementById('totalToAllocate');
+    const newAllocationInfo = document.getElementById('newAllocationInfo');
+    const reallocationInfo = document.getElementById('reallocationInfo');
+    const reallocationAvailable = document.getElementById('reallocationAvailable');
+
+    function updateTotalQuantity() {
+        let total = 0;
+        document.querySelectorAll('.allocation-quantity').forEach(input => {
+            total += parseInt(input.value || 0);
+        });
+        totalToAllocate.textContent = total;
+
+        const selectedType = document.querySelector('input[name="allocation_type"]:checked').value;
+        const maxAllowed = selectedType === 'new' ? trueRemaining : parseInt(reallocationAvailable.textContent);
+
+        if (total > maxAllowed) {
+            submitBtn.disabled = true;
+            totalToAllocate.parentElement.classList.add('text-danger');
+        } else {
+            submitBtn.disabled = false;
+            totalToAllocate.parentElement.classList.remove('text-danger');
+        }
+    }
+
+    function updateReallocationTotal() {
+        let total = 0;
+        reallocationCheckboxes.forEach(checkbox => {
+            if (checkbox.checked) {
+                const inputId = checkbox.dataset.inputId;
+                const quantityInput = document.getElementById(inputId);
+                total += parseInt(quantityInput.value || 0);
+            }
+        });
+        reallocationAvailable.textContent = total;
+        totalSelectedSpan.textContent = total;
+        updateTotalQuantity();
+    }
+
+    // Handle checkbox changes
+    reallocationCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const inputId = this.dataset.inputId;
+            const quantityInput = document.getElementById(inputId);
+            
+            if (this.checked) {
+                quantityInput.disabled = false;
+                quantityInput.value = quantityInput.dataset.max;
+            } else {
+                quantityInput.disabled = true;
+                quantityInput.value = '';
+            }
+            updateReallocationTotal();
+        });
+    });
+
+    // Handle quantity input changes for reallocation
+    document.querySelectorAll('.reallocation-quantity').forEach(input => {
+        input.addEventListener('input', updateReallocationTotal);
+    });
+
+    // Handle allocation type changes
+    allocationType.forEach(radio => {
+        radio.addEventListener('change', function() {
+            reallocationSection.style.display = this.value === 'reallocation' ? 'block' : 'none';
+            newAllocationInfo.style.display = this.value === 'new' ? 'block' : 'none';
+            reallocationInfo.style.display = this.value === 'reallocation' ? 'block' : 'none';
+            
+            if (this.value === 'new') {
+                reallocationCheckboxes.forEach(checkbox => {
+                    checkbox.checked = false;
+                    const inputId = checkbox.dataset.inputId;
+                    const quantityInput = document.getElementById(inputId);
+                    quantityInput.disabled = true;
+                    quantityInput.value = '';
+                });
+            }
+            updateReallocationTotal();
+        });
+    });
+
+    // Add new department allocation fields
+    addDepartmentBtn.addEventListener('click', function() {
+        const template = departmentAllocations.children[0].cloneNode(true);
+        // Clear input values
+        template.querySelectorAll('input').forEach(input => {
+            input.value = '';
+        });
+        // Add remove button if it's not the first entry
+        if (departmentAllocations.children.length > 0) {
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'btn btn-danger btn-sm position-absolute top-0 end-0 m-2';
+            removeBtn.innerHTML = '×';
+            removeBtn.onclick = function() {
+                this.parentElement.parentElement.remove();
+                updateTotalQuantity();
+            };
+            template.querySelector('.card-body').appendChild(removeBtn);
+        }
+        departmentAllocations.appendChild(template);
+
+        // Add event listener to new quantity input
+        template.querySelector('.allocation-quantity').addEventListener('input', updateTotalQuantity);
+    });
+
+    // Add event listeners to initial quantity inputs
+    document.querySelectorAll('.allocation-quantity').forEach(input => {
+        input.addEventListener('input', updateTotalQuantity);
+    });
+
+    // Initialize displays
+    updateReallocationTotal();
+    newAllocationInfo.style.display = 'block';
+});
+</script>
 {% endblock %}

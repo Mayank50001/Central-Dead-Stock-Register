@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-center">Deallocate CDSR Item</h2>
+
+    <!-- Item Details Card -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4>Item Details</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>CDSR No:</strong> {{ cdsr_item.cdsr_no }}</p>
+                    <p><strong>CDSR Page No:</strong> {{ cdsr_item.cdsr_pg_no }}</p>
+                    <p><strong>Product Name:</strong> {{ cdsr_item.product_description }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Total Quantity:</strong> {{ cdsr_item.product_quantity }}</p>
+                    <p><strong>Total Allocated:</strong> {{ total_allocated }}</p>
+                    <p><strong>Current Stock:</strong> {{ cdsr_item.remaining_quantity }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Allocations and Deallocation Form -->
+    {% if existing_allocations %}
+    <form method="POST">
+        {% csrf_token %}
+        <div class="card">
+            <div class="card-header">
+                <h4>Select Allocations to Deallocate</h4>
+            </div>
+            <div class="card-body">
+                {% for alloc in existing_allocations %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input deallocation-checkbox" type="checkbox" 
+                                           name="deallocate_from" value="{{ alloc.ddsr_id }}"
+                                           data-input-id="dealloc_qty_{{ alloc.ddsr_id }}">
+                                    <label class="form-check-label">
+                                        <strong>Department:</strong> {{ alloc.department }}<br>
+                                        <strong>DDSR No:</strong> {{ alloc.ddsr_no }}<br>
+                                        <strong>Current Allocation:</strong> {{ alloc.accepted_product_quantity }} units
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="input-group">
+                                    <span class="input-group-text">Quantity to Deallocate</span>
+                                    <input type="number" class="form-control deallocation-quantity" 
+                                           id="dealloc_qty_{{ alloc.ddsr_id }}"
+                                           name="deallocation_quantity_{{ alloc.ddsr_id }}"
+                                           min="1" max="{{ alloc.accepted_product_quantity }}"
+                                           disabled
+                                           data-max="{{ alloc.accepted_product_quantity }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <div class="alert alert-info" id="quantityInfo">
+                    <p>Total Quantity to Deallocate: <span id="totalToDeallocate">0</span></p>
+                </div>
+
+                <button type="submit" class="btn btn-danger" id="submitBtn">Deallocate Selected</button>
+                <a href="{% url 'inventory:cdsr_allocation_list' %}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </div>
+    </form>
+    {% else %}
+    <div class="alert alert-warning">
+        No allocations found for this item.
+    </div>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const deallocationCheckboxes = document.querySelectorAll('.deallocation-checkbox');
+    const totalToDeallocate = document.getElementById('totalToDeallocate');
+    const submitBtn = document.getElementById('submitBtn');
+
+    function updateTotalQuantity() {
+        let total = 0;
+        document.querySelectorAll('.deallocation-quantity').forEach(input => {
+            if (!input.disabled) {
+                total += parseInt(input.value || 0);
+            }
+        });
+        totalToDeallocate.textContent = total;
+
+        // Enable submit only if at least one quantity is selected
+        submitBtn.disabled = total === 0;
+    }
+
+    // Handle checkbox changes
+    deallocationCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const inputId = this.dataset.inputId;
+            const quantityInput = document.getElementById(inputId);
+            
+            if (this.checked) {
+                quantityInput.disabled = false;
+                quantityInput.value = quantityInput.dataset.max;
+            } else {
+                quantityInput.disabled = true;
+                quantityInput.value = '';
+            }
+            updateTotalQuantity();
+        });
+    });
+
+    // Handle quantity input changes
+    document.querySelectorAll('.deallocation-quantity').forEach(input => {
+        input.addEventListener('input', updateTotalQuantity);
+    });
+
+    // Initialize
+    updateTotalQuantity();
+});
+</script>
+{% endblock %} 

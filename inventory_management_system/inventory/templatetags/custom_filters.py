@@ -22,7 +22,7 @@ def remove_sort_field(sort_by, field):
     return ",".join(fields)  # Return cleaned string
 
 @register.filter
-def zip_lists(a, b):
+def zip_list(a, b):
     """Zips two lists together for template rendering"""
     return zip(a, b)
 

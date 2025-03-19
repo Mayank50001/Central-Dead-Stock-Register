@@ -1,97 +1,122 @@
 {% extends 'base.html' %}
+{% load custom_filters %}
 
 {% block content %}
 <div class="container mt-4">
     <h2 class="text-center fw-bold bg-primary text-white p-3 rounded">CDSR Allocation</h2>
 
     <!-- ✅ Filter Form -->
-    <div class="card shadow p-3">
-        <form method="GET" id="filterForm" class="mb-3">
-            <div id="filterContainer">
-                <div class="d-flex gap-2 align-items-center">
-                    <select name="filter_field" class="form-select">
-                        <option value="">-- Select Field --</option>
-                        {% for field in fields %}
-                        <option value="{{ field }}">{{ field|title }}</option>
-                        {% endfor %}
-                    </select>
+    <form method="GET" id="filterForm" class="mb-3">
+        <div id="filterContainer">
+            <div class="d-flex gap-2">
+                <select name="filter_field" class="form-select">
+                    <option value="">-- Select Field --</option>
+                    {% for field in fields %}
+                    <option value="{{ field }}">{{ field|title }}</option>
+                    {% endfor %}
+                </select>
+                <!-- ✅ Hidden fields for sorting and pagination -->
 
-                    {% if filter_field %}
-                        <input type="hidden" name="filter_field" value="{{ filter_field }}">
-                        <input type="hidden" name="filter_value" value="{{ filter_value }}">
-                    {% endif %}
-                    {% if items.number > 1 %}
-                        <input type="hidden" name="page" value="{{ items.number }}">
-                    {% endif %}
+                {% if filter_field %}
+                <input type="hidden" name="filter_field" value="{{ filter_field }}">
+                <input type="hidden" name="filter_value" value="{{ filter_value }}">
+                {% endif %}
+                {% if allocated_filter %}
+                <input type="hidden" name="allocated_filter" value="{{ allocated_filter }}">
 
-                    <input type="text" name="filter_value" class="form-control" placeholder="Enter filter value">
-                    <button type="button" class="btn btn-danger remove-filter">X</button>
-                </div>
+                {% endif %}
+                {% if items.number > 1 %}
+                <input type="hidden" name="page" value="{{ items.number }}">
+                {% endif %}
+                <input type="text" name="filter_value" class="form-control" placeholder="Enter filter value">
+                <button type="button" class="btn btn-danger remove-filter">X</button>
             </div>
-            <div class="mt-2">
-                <button type="button" id="addFilter" class="btn btn-outline-secondary">+ Add Filter</button>
-                <button type="submit" class="btn btn-primary">Apply</button>
-            </div>
-        </form>
-    </div>
+        </div>
+        <button type="button" id="addFilter" class="btn btn-secondary mt-2">+ Add Filter</button>
+        <button type="submit" class="btn btn-primary mt-2">Apply</button>
+    </form>
     <!-- ✅ Filter Form End -->
 
-    <div class="card shadow p-3 mt-3">
-        <form method="POST" action="{% url 'inventory:bulk_allocate_confirm' %}">
-            {% csrf_token %}
-
-            <div class="table-responsive">
-                <table class="table table-hover table-bordered">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Select</th>
-                            <th>CDSR No</th>
-                            <th>CDSR Page No</th>
-                            <th>Product Name</th>
-                            <th>Quantity</th>
-                            <th>Allocation Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in cdsr_items %}
-                        <tr class="{% if item.is_allocated %}table-secondary{% endif %}">
-                            <td class="text-center">
-                                {% if not item.is_allocated %}
-                                <input type="checkbox" name="selected_items" value="{{ item.cdsr_id }}" class="form-check-input">
-                                {% endif %}
-                            </td>
-                            <td>{{ item.cdsr_no }}</td>
-                            <td>{{ item.cdsr_pg_no }}</td>
-                            <td>{{ item.cdsr_name }}</td>
-                            <td>{{ item.product_quantity }}</td>
-                            <td>
-                                {% if item.is_allocated %}
-                                    <span class="badge bg-secondary">Allocated</span>
-                                {% else %}
-                                    <a href="{% url 'inventory:allocate_form' item.cdsr_id %}" class="btn btn-sm btn-success">Allocate</a>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-
-            <button type="submit" class="btn btn-success w-100">Allocate Selected</button>
-        </form>
+    <!-- ✅ Toggle Filter Buttons -->
+    <div class="mb-3">
+        <a href="?allocated_filter=allocated"
+            class="btn btn-info {% if allocated_filter == 'allocated' %}active{% endif %}">
+            Show Allocated
+        </a>
+        <a href="?allocated_filter=unallocated"
+            class="btn btn-warning {% if allocated_filter == 'unallocated' %}active{% endif %}">
+            Show Unallocated
+        </a>
+        <a href="{% url 'inventory:cdsr_allocation_list' %}" class="btn btn-secondary">
+            Show All
+        </a>
     </div>
 
+
+    <form method="POST" action="{% url 'inventory:bulk_allocate_confirm' %}">
+        {% csrf_token %}
+
+
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Select</th>
+                    <th>CDSR No</th>
+                    <th>CDSR Page No</th>
+                    <th>Product Name</th>
+                    <th>Initial Quantity</th>
+                    <th>Current Remaining Quantity</th>
+                    <th>Allocation Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in cdsr_items %}
+                <tr class="allocation-row {% if item.is_allocated %}text-info{% endif %}">
+                    <td>
+                        <input type="checkbox" name="selected_items" value="{{ item.cdsr_id }}" class="item-checkbox">
+                    </td>
+                    <td>{{ item.cdsr_no }}</td>
+                    <td>{{ item.cdsr_pg_no }}</td>
+                    <td>{{ item.product_description }}</td>
+                    <td>{{ item.product_quantity }}</td>
+                    <td>{{ item.remaining_quantity }}</td>
+                    <td>{{ item.allocated_department }}</td>
+                    <td>
+                        
+                        <div class="btn-group" role="group">
+                            <a href="{% url 'inventory:allocate_form' item.cdsr_id %}"
+                            class="btn btn-sm {% if item.is_allocated %}btn-warning{% else %}btn-primary{% endif %}">
+                            {% if item.is_allocated %}Reallocate{% else %}Allocate{% endif %}
+                        </a>
+                            {% if item.has_allocations %}
+                            <a href="{% url 'inventory:deallocate_form' item.cdsr_id %}" class="btn btn-sm btn-danger">Deallocate</a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="btn-group">
+            <button type="submit" class="btn btn-success" formaction="{% url 'inventory:bulk_allocate_confirm' %}">Allocate Selected</button>
+            <button type="submit" class="btn btn-danger" formaction="{% url 'inventory:bulk_deallocate_confirm' %}" id="bulkDeallocateBtn">Deallocate Selected</button>
+        </div>
+    </form>
     <!-- ✅ Pagination Controls -->
     <div class="d-flex justify-content-center mt-4">
         <nav>
             <ul class="pagination pagination-lg">
                 {% if cdsr_items.has_previous %}
                 <li class="page-item">
-                    <a class="page-link" href="?page=1{% if filter_field %}&filter_field={{ filter_field }}&filter_value={{ filter_value }}{% endif %}">First</a>
+                    <a class="page-link" href="?page=1{% for field, value in filter_fields|zip_list:filter_values %}&filter_field={{ field }}&filter_value={{ value }}{% endfor %}{% if allocated_filter %}&allocated_filter={{ allocated_filter }}{% endif %}">
+                        First
+                    </a>
                 </li>
                 <li class="page-item">
-                    <a class="page-link"
-                    href="?page={{ cdsr_items.previous_page_number }}{% if filter_field %}&filter_field={{ filter_field }}&filter_value={{ filter_value }}{% endif %}">Previous</a>
+                    <a class="page-link" href="?page={{ cdsr_items.previous_page_number }}{% for field, value in filter_fields|zip_list:filter_values %}&filter_field={{ field }}&filter_value={{ value }}{% endfor %}{% if allocated_filter %}&allocated_filter={{ allocated_filter }}{% endif %}">
+                        Previous
+                    </a>
                 </li>
                 {% endif %}
 
@@ -103,11 +128,14 @@
 
                 {% if cdsr_items.has_next %}
                 <li class="page-item">
-                    <a class="page-link"
-                        href="?page={{ cdsr_items.next_page_number }}{% if filter_field %}&filter_field={{ filter_field }}&filter_value={{ filter_value }}{% endif %}">Next</a>
+                    <a class="page-link" href="?page={{ cdsr_items.next_page_number }}{% for field, value in filter_fields|zip_list:filter_values %}&filter_field={{ field }}&filter_value={{ value }}{% endfor %}{% if allocated_filter %}&allocated_filter={{ allocated_filter }}{% endif %}">
+                        Next
+                    </a>
                 </li>
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ cdsr_items.paginator.num_pages }}{% if filter_field %}&filter_field={{ filter_field }}&filter_value={{ filter_value }}{% endif %}">Last</a>
+                    <a class="page-link" href="?page={{ cdsr_items.paginator.num_pages }}{% for field, value in filter_fields|zip_list:filter_values %}&filter_field={{ field }}&filter_value={{ value }}{% endfor %}{% if allocated_filter %}&allocated_filter={{ allocated_filter }}{% endif %}">
+                        Last
+                    </a>
                 </li>
                 {% endif %}
             </ul>
@@ -115,4 +143,38 @@
     </div>
     <!-- ✅ Pagination End -->
 </div>
+<script>
+    document.getElementById("addFilter").addEventListener("click", function() {
+    let container = document.getElementById("filterContainer");
+    let newFilter = document.createElement("div");
+    newFilter.classList.add("d-flex", "gap-2", "mt-2");
+    newFilter.innerHTML = `
+        <select name="filter_field" class="form-select">
+            <option value="">-- Select Field --</option>
+            {% for field in fields %}
+            <option value="{{ field }}">{{ field|title }}</option>
+            {% endfor %}
+        </select>
+        <input type="text" name="filter_value" class="form-control" placeholder="Enter filter value">
+        <button type="button" class="btn btn-danger remove-filter">X</button>
+    `;
+    container.appendChild(newFilter);
+});
+
+document.addEventListener("click", function(event) {
+    if (event.target.classList.contains("remove-filter")) {
+        event.target.parentElement.remove();
+    }
+});
+
+// Add validation for bulk deallocation
+document.getElementById('bulkDeallocateBtn').addEventListener('click', function(e) {
+    const checkedItems = document.querySelectorAll('.item-checkbox:checked');
+    if (checkedItems.length === 0) {
+        e.preventDefault();
+        alert('Please select at least one item to deallocate.');
+    }
+});
+</script>
+
 {% endblock %}

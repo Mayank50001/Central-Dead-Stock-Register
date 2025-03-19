@@ -43,8 +43,7 @@
                     <tr>
                         {% for field in fields %}
                         <th>
-                            <a href="?sort_by={{ field }}&order={% if sort_by == field and order == 'asc' %}desc{% else %}asc{% endif %}
-{% if filter_field %}&filter_field={{ filter_field }}&filter_value={{ filter_value }}{% endif %}"
+                            <a href="?sort_by={{ field }}&order={% if sort_by == field and order == 'asc' %}desc{% else %}asc{% endif %}{% for field, value in filter_fields|zip_list:filter_values %}&filter_field={{ field }}&filter_value={{ value }}{% endfor %}"
                                 class="text-white text-decoration-none">
                                 {{ field|title }}
                                 {% if sort_by == field %}
@@ -84,11 +83,11 @@
                 <ul class="pagination">
                     {% if items.has_previous %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ items.next_page_number }}{% if sort_by %}&sort_by={{ sort_by }}&order={{ order}}{% endif %}{% if filter_field %}&filter_field={{ filter_field }}&filter_value={{ filter_value }}{% endif %}"">First</a>
+                        <a class="page-link" href="?page={{ items.next_page_number }}{% if sort_by %}&sort_by={{ sort_by }}&order={{ order}}{% endif %}{% for field, value in filter_fields|zip_list:filter_values %}&filter_field={{ field }}&filter_value={{ value }}{% endfor %}">First</a>
                     </li>
                     <li class="page-item">
                         <a class="page-link"
-                        href="?page={{ items.next_page_number }}{% if sort_by %}&sort_by={{ sort_by }}&order={{ order }}{% endif %}{% if filter_field %}&filter_field={{ filter_field }}&filter_value={{ filter_value }}{% endif %}">Previous</a>
+                        href="?page={{ items.next_page_number }}{% if sort_by %}&sort_by={{ sort_by }}&order={{ order }}{% endif %}{% for field, value in filter_fields|zip_list:filter_values %}&filter_field={{ field }}&filter_value={{ value }}{% endfor %}">Previous</a>
                     </li>
                     {% endif %}
 
@@ -101,11 +100,11 @@
                     {% if items.has_next %}
                     <li class="page-item">
                         <a class="page-link"
-                            href="?page={{ items.next_page_number }}{% if sort_by %}&sort_by={{ sort_by }}&order={{ order }}{% endif %}&filter_field={{ filter_field }}&filter_value={{ filter_value }}">
+                            href="?page={{ items.next_page_number }}{% if sort_by %}&sort_by={{ sort_by }}&order={{ order }}{% endif %}{% for field, value in filter_fields|zip_list:filter_values %}&filter_field={{ field }}&filter_value={{ value }}{% endfor %}">
                             >Next</a>
                     </li>
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ items.next_page_number }}{% if sort_by %}&sort_by={{ sort_by }}&order={{ order }}{% endif %}{% if filter_field %}&filter_field={{ filter_field }}&filter_value={{ filter_value }}{% endif %}">
+                        <a class="page-link" href="?page={{ items.next_page_number }}{% if sort_by %}&sort_by={{ sort_by }}&order={{ order }}{% endif %}{% for field, value in filter_fields|zip_list:filter_values %}&filter_field={{ field }}&filter_value={{ value }}{% endfor %}">
                             >Last</a>
                     </li>
                     {% endif %}
