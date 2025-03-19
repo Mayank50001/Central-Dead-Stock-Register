@@ -12,4 +12,5 @@ urlpatterns = [
     path("allocate/<int:cdsr_id>/", allocate_form, name="allocate_form"),
     path("allocation/bulk-confirm/", bulk_allocate_confirm, name="bulk_allocate_confirm"),
     path("allocation/bulk/", bulk_allocate, name="bulk_allocate"),
+    
 ]
