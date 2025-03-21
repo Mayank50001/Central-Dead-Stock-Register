@@ -83,8 +83,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'deadstockregister',
-        'USER': 'root',
-        'PASSWORD': 'hems@2006',
+        'USER': 'sarthak',
+        'PASSWORD': 'sarthak@1978',
         'HOST': 'localhost',  # or '127.0.0.1'
         'PORT': '3306',
         'OPTIONS': {

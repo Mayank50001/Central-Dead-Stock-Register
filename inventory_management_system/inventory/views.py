@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.urls import reverse
 from .forms import DepartmentUserCreationForm, ItemForm  # ✅ Added ItemForm
-from django.db.models import Q , Sum
+from django.db.models import Q , Sum , OuterRef, Subquery, Case, When, Value, BooleanField, Exists
 from accounts.models import CustomUser
 from .models import CDSR , DDSR  # ✅ CDSR Model Import
 from .decorators import role_required
@@ -323,54 +323,60 @@ def inventory_list(request):
 @login_required
 @role_required(allowed_roles=['admin'])
 def cdsr_allocation_list(request):
-    # Fetching all CDSR items
-    cdsr_items = CDSR.objects.all()
-    fields = [field.name for field in CDSR._meta.fields]  # ✅ Fetch All Column Names
-
-    # ✅ Filtering Logic
-    filter_queries = Q()
+    # Get filter fields and values from the request
     filter_fields = request.GET.getlist("filter_field")
     filter_values = request.GET.getlist("filter_value")
 
+    # Initial QuerySet: Start with CDSR filtering and annotations
+    filter_queries = Q()
     for field, value in zip(filter_fields, filter_values):
         if field and value:
             filter_queries &= Q(**{f"{field}__icontains": value})
 
-    cdsr_items = cdsr_items.filter(filter_queries)
+    # Efficient query without select_related (since there's no ForeignKey relationship)
+    cdsr_items = CDSR.objects.filter(filter_queries)
 
-    # Checking which CDSR items are fully allocated in DDSR
-    for item in cdsr_items:
-        is_fully_allocated = item.remaining_quantity == 0  # Fully allocated if no stock left
-        item.is_allocated = is_fully_allocated  # True only if remaining_quantity is 0
+    # Add annotations for 'is_fully_allocated' and 'allocated_department'
+    cdsr_items = cdsr_items.annotate(
+        is_fully_allocated=Case(
+            When(remaining_quantity=0, then=Value(True)),
+            default=Value(False),
+            output_field=BooleanField(),
+        ),
+        # Get the department allocation information using Subquery
+        allocated_department=Subquery(
+            DDSR.objects.filter(cdsr_table_id=OuterRef('cdsr_id'))
+            .values('department')
+            .annotate(total_allocated=Sum('accepted_product_quantity'))
+            .values('department')
+            .order_by()[:1]  # Limit to the first matching department
+        ),
+        # Check if the item has any allocations (using Exists)
+        has_allocations=Exists(
+            DDSR.objects.filter(cdsr_table_id=OuterRef('cdsr_id'))
+        ),
+    )
 
-        # 🔹 Fetch all departments and their allocated quantity for this item
-        allocated_data = DDSR.objects.filter(cdsr_table_id=item.cdsr_id).values('department').annotate(total_allocated=Sum('accepted_product_quantity'))
-        
-        # Add has_allocations attribute
-        item.has_allocations = allocated_data.exists()
-        
-        # 🔹 Format department list as: "Computer Science (10), Mechanical (5)"
-        item.allocated_department = ', '.join([f"{entry['department']} ({entry['total_allocated']})" for entry in allocated_data]) if allocated_data else None
-
-    # ✅ 🔥 New Filtering Logic
-    allocated_filter = request.GET.get("allocated_filter")  # ✅ Get Filter Type
+    # Handle the allocation filter condition (allocated/unallocated)
+    allocated_filter = request.GET.get("allocated_filter")
     if allocated_filter == "allocated":
-        cdsr_items = [item for item in cdsr_items if item.is_allocated]
+        cdsr_items = cdsr_items.filter(is_fully_allocated=True)
     elif allocated_filter == "unallocated":
-        cdsr_items = [item for item in cdsr_items if not item.is_allocated]
+        cdsr_items = cdsr_items.filter(is_fully_allocated=False)
 
-    
-    # ✅ Pagination
-    paginator = Paginator(cdsr_items, 25)  # 50 items per page
+    # Pagination: Apply pagination after filtering and annotating
+    paginator = Paginator(cdsr_items, 50)
     page_number = request.GET.get("page")
     cdsr_item_list = paginator.get_page(page_number)
 
+    # Pass the necessary context to the template
     return render(request, "inventory/allocation_list.html", {
         "cdsr_items": cdsr_item_list,
-        "fields": fields,
+        "fields": [field.name for field in CDSR._meta.fields],  # Get all column names
         "filter_fields": filter_fields,
         "filter_values": filter_values
-        })
+    })
+
 
 
 @login_required
