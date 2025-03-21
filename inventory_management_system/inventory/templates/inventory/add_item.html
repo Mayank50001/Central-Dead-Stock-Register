@@ -11,7 +11,16 @@
             {% for field in form %}
                 <div class="col-md-6 mb-3 d-flex flex-column">
                     <label class="fw-bold mb-1">{{ field.label }}:</label>
-                    {{ field }}
+                    {% if field.name == 'remaining_quantity' or field.name == 'total_cost' %}
+                        <input type="{{ field.field.widget.input_type }}" 
+                               name="{{ field.name }}" 
+                               id="{{ field.id_for_label }}"
+                               class="form-control disabled"
+                               readonly
+                               value="{{ field.value|default:'' }}">
+                    {% else %}
+                        {{ field }}
+                    {% endif %}
                 </div>
             {% endfor %}
         </div>
@@ -41,6 +50,11 @@
         outline: none;
     }
 
+    .form-control.disabled {
+        background-color: #e9ecef;
+        cursor: not-allowed;
+    }
+
     textarea.form-control {
         height: 100px;
         resize: none;
@@ -51,4 +65,31 @@
         margin: 5px;
     }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const singleCostField = document.querySelector('input[name="single_cost"]');
+    const productQuantityField = document.querySelector('input[name="product_quantity"]');
+    const totalCostField = document.querySelector('input[name="total_cost"]');
+    const remainingQuantityField = document.querySelector('input[name="remaining_quantity"]');
+
+    // Function to calculate total cost
+    function calculateTotalCost() {
+        const singleCost = parseFloat(singleCostField.value) || 0;
+        const productQuantity = parseFloat(productQuantityField.value) || 0;
+        const totalCost = singleCost * productQuantity;
+        totalCostField.value = totalCost.toFixed(2);
+        
+        // Set remaining quantity equal to product quantity
+        remainingQuantityField.value = productQuantity;
+    }
+
+    // Add event listeners for changes
+    singleCostField.addEventListener('input', calculateTotalCost);
+    productQuantityField.addEventListener('input', calculateTotalCost);
+
+    // Initial calculation
+    calculateTotalCost();
+});
+</script>
 {% endblock %}

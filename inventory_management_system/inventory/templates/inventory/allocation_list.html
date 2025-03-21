@@ -2,179 +2,469 @@
 {% load custom_filters %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2 class="text-center fw-bold bg-primary text-white p-3 rounded">CDSR Allocation</h2>
-
-    <!-- ✅ Filter Form -->
-    <form method="GET" id="filterForm" class="mb-3">
-        <div id="filterContainer">
-            <div class="d-flex gap-2">
-                <select name="filter_field" class="form-select">
-                    <option value="">-- Select Field --</option>
-                    {% for field in fields %}
-                    <option value="{{ field }}">{{ field|title }}</option>
-                    {% endfor %}
-                </select>
-                <!-- ✅ Hidden fields for sorting and pagination -->
-
-                {% if filter_field %}
-                <input type="hidden" name="filter_field" value="{{ filter_field }}">
-                <input type="hidden" name="filter_value" value="{{ filter_value }}">
-                {% endif %}
-                {% if allocated_filter %}
-                <input type="hidden" name="allocated_filter" value="{{ allocated_filter }}">
-
-                {% endif %}
-                {% if items.number > 1 %}
-                <input type="hidden" name="page" value="{{ items.number }}">
-                {% endif %}
-                <input type="text" name="filter_value" class="form-control" placeholder="Enter filter value">
-                <button type="button" class="btn btn-danger remove-filter">X</button>
-            </div>
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <a href="{% url 'inventory:admin_dashboard' %}" class="h3 text-decoration-none mb-0">CDSR Allocation</a>
+            <p class="text-muted">Manage and track item allocations across departments</p>
         </div>
-        <button type="button" id="addFilter" class="btn btn-secondary mt-2">+ Add Filter</button>
-        <button type="submit" class="btn btn-primary mt-2">Apply</button>
-    </form>
-    <!-- ✅ Filter Form End -->
-
-    <!-- ✅ Toggle Filter Buttons -->
-    <div class="mb-3">
-        <a href="?allocated_filter=allocated"
-            class="btn btn-info {% if allocated_filter == 'allocated' %}active{% endif %}">
-            Show Allocated
-        </a>
-        <a href="?allocated_filter=unallocated"
-            class="btn btn-warning {% if allocated_filter == 'unallocated' %}active{% endif %}">
-            Show Unallocated
-        </a>
-        <a href="{% url 'inventory:cdsr_allocation_list' %}" class="btn btn-secondary">
-            Show All
-        </a>
     </div>
 
-
-    <form method="POST" action="{% url 'inventory:bulk_allocate_confirm' %}">
-        {% csrf_token %}
-
-
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>Select</th>
-                    <th>CDSR No</th>
-                    <th>CDSR Page No</th>
-                    <th>Product Name</th>
-                    <th>Initial Quantity</th>
-                    <th>Current Remaining Quantity</th>
-                    <th>Allocation Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in cdsr_items %}
-                <tr class="allocation-row {% if item.is_allocated %}text-info{% endif %}">
-                    <td>
-                        <input type="checkbox" name="selected_items" value="{{ item.cdsr_id }}" class="item-checkbox">
-                    </td>
-                    <td>{{ item.cdsr_no }}</td>
-                    <td>{{ item.cdsr_pg_no }}</td>
-                    <td>{{ item.product_description }}</td>
-                    <td>{{ item.product_quantity }}</td>
-                    <td>{{ item.remaining_quantity }}</td>
-                    <td>{{ item.allocated_department }}</td>
-                    <td>
-                        
-                        <div class="btn-group" role="group">
-                            <a href="{% url 'inventory:allocate_form' item.cdsr_id %}"
-                            class="btn btn-sm {% if item.is_allocated %}btn-warning{% else %}btn-primary{% endif %}">
-                            {% if item.is_allocated %}Reallocate{% else %}Allocate{% endif %}
-                        </a>
-                            {% if item.has_allocations %}
-                            <a href="{% url 'inventory:deallocate_form' item.cdsr_id %}" class="btn btn-sm btn-danger">Deallocate</a>
-                            {% endif %}
+    <!-- Main Card -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <!-- Filter Section -->
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title mb-0">Filters</h5>
+                </div>
+                
+                <form method="GET" id="filterForm" class="mb-3">
+                    <div id="filterContainer">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="input-group">
+                                    <select name="filter_field" class="form-select">
+                                        <option value="">-- Select Field --</option>
+                                        {% for field in fields %}
+                                        <option value="{{ field }}">{{ field|title }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <input type="text" name="filter_value" class="form-control" placeholder="Enter filter value">
+                                    <button type="button" class="btn btn-outline-danger remove-filter">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-8">
+                                <div class="d-flex gap-2">
+                                    <button type="button" id="addFilter" class="btn btn-outline-secondary">
+                                        <i class="fas fa-plus"></i> Add Filter
+                                    </button>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-search"></i> Apply Filters
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                    </div>
+                </form>
 
-        <div class="btn-group">
-            <button type="submit" class="btn btn-success" formaction="{% url 'inventory:bulk_allocate_confirm' %}">Allocate Selected</button>
-            <button type="submit" class="btn btn-danger" formaction="{% url 'inventory:bulk_deallocate_confirm' %}" id="bulkDeallocateBtn">Deallocate Selected</button>
+                <!-- Toggle Filter Buttons -->
+                <div class="d-flex gap-2 mb-3">
+                    <a href="?allocated_filter=allocated"
+                        class="btn btn-outline-info {% if allocated_filter == 'allocated' %}active{% endif %}">
+                        <i class="fas fa-check-circle"></i> Show Allocated
+                    </a>
+                    <a href="?allocated_filter=unallocated"
+                        class="btn btn-outline-warning {% if allocated_filter == 'unallocated' %}active{% endif %}">
+                        <i class="fas fa-times-circle"></i> Show Unallocated
+                    </a>
+                    <a href="{% url 'inventory:cdsr_allocation_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-list"></i> Show All
+                    </a>
+                </div>
+            </div>
+
+            <!-- Table Section -->
+            <form method="POST" action="{% url 'inventory:bulk_allocate_confirm' %}">
+                {% csrf_token %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="text-center" style="width: 50px;">
+                                    <input type="checkbox" id="selectAll" class="form-check-input">
+                                </th>
+                                <th>CDSR No</th>
+                                <th>CDSR Page No</th>
+                                <th>Product Name</th>
+                                <th>Initial Quantity</th>
+                                <th>Current Remaining</th>
+                                <th>Allocation Status</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in cdsr_items %}
+                            <tr class="{% if item.is_allocated %}table-info{% endif %}">
+                                <td class="text-center">
+                                    <input type="checkbox" name="selected_items" value="{{ item.cdsr_id }}" class="form-check-input item-checkbox">
+                                </td>
+                                <td>{{ item.cdsr_no }}</td>
+                                <td>{{ item.cdsr_pg_no }}</td>
+                                <td>{{ item.product_description }}</td>
+                                <td>{{ item.product_quantity }}</td>
+                                <td>{{ item.remaining_quantity }}</td>
+                                <td>{{ item.allocated_department }}</td>
+                                <td class="text-center">
+                                    <div class="btn-group">
+                                        <a href="{% url 'inventory:allocate_form' item.cdsr_id %}"
+                                            class="btn btn-sm {% if item.is_allocated %}btn-outline-warning{% else %}btn-outline-primary{% endif %}"
+                                            data-bs-toggle="tooltip"
+                                            title="{% if item.is_allocated %}Reallocate{% else %}Allocate{% endif %}">
+                                            <i class="fas {% if item.is_allocated %}fa-exchange-alt{% else %}fa-plus{% endif %}"></i>
+                                        </a>
+                                        {% if item.has_allocations %}
+                                        <a href="{% url 'inventory:deallocate_form' item.cdsr_id %}" 
+                                           class="btn btn-sm btn-outline-danger"
+                                           data-bs-toggle="tooltip"
+                                           title="Deallocate">
+                                            <i class="fas fa-minus"></i>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="8" class="text-center py-4">
+                                    <div class="text-muted">
+                                        <i class="fas fa-box-open fa-2x mb-2"></i>
+                                        <p class="mb-0">No items found.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Bulk Actions -->
+                <div class="d-flex gap-2 mt-3">
+                    <button type="submit" class="btn btn-success" formaction="{% url 'inventory:bulk_allocate_confirm' %}">
+                        <i class="fas fa-plus-circle"></i> Allocate Selected
+                    </button>
+                    <button type="submit" class="btn btn-danger" formaction="{% url 'inventory:bulk_deallocate_confirm' %}" id="bulkDeallocateBtn">
+                        <i class="fas fa-minus-circle"></i> Deallocate Selected
+                    </button>
+                </div>
+            </form>
+
+            <!-- Pagination -->
+            {% if cdsr_items.paginator.num_pages > 1 %}
+            <div class="d-flex justify-content-center mt-4">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination">
+                        {% if cdsr_items.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% for field, value in filter_fields|zip_list:filter_values %}&filter_field={{ field }}&filter_value={{ value }}{% endfor %}{% if allocated_filter %}&allocated_filter={{ allocated_filter }}{% endif %}">
+                                <i class="fas fa-angle-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ cdsr_items.previous_page_number }}{% for field, value in filter_fields|zip_list:filter_values %}&filter_field={{ field }}&filter_value={{ value }}{% endfor %}{% if allocated_filter %}&allocated_filter={{ allocated_filter }}{% endif %}">
+                                <i class="fas fa-angle-left"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        {% for num in cdsr_items.paginator.page_range %}
+                            {% if cdsr_items.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                            {% elif num > cdsr_items.number|add:'-3' and num < cdsr_items.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% for field, value in filter_fields|zip_list:filter_values %}&filter_field={{ field }}&filter_value={{ value }}{% endfor %}{% if allocated_filter %}&allocated_filter={{ allocated_filter }}{% endif %}">{{ num }}</a>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if cdsr_items.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ cdsr_items.next_page_number }}{% for field, value in filter_fields|zip_list:filter_values %}&filter_field={{ field }}&filter_value={{ value }}{% endfor %}{% if allocated_filter %}&allocated_filter={{ allocated_filter }}{% endif %}">
+                                <i class="fas fa-angle-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ cdsr_items.paginator.num_pages }}{% for field, value in filter_fields|zip_list:filter_values %}&filter_field={{ field }}&filter_value={{ value }}{% endfor %}{% if allocated_filter %}&allocated_filter={{ allocated_filter }}{% endif %}">
+                                <i class="fas fa-angle-double-right"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
         </div>
-    </form>
-    <!-- ✅ Pagination Controls -->
-    <div class="d-flex justify-content-center mt-4">
-        <nav>
-            <ul class="pagination pagination-lg">
-                {% if cdsr_items.has_previous %}
-                <li class="page-item">
-                    <a class="page-link" href="?page=1{% for field, value in filter_fields|zip_list:filter_values %}&filter_field={{ field }}&filter_value={{ value }}{% endfor %}{% if allocated_filter %}&allocated_filter={{ allocated_filter }}{% endif %}">
-                        First
-                    </a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ cdsr_items.previous_page_number }}{% for field, value in filter_fields|zip_list:filter_values %}&filter_field={{ field }}&filter_value={{ value }}{% endfor %}{% if allocated_filter %}&allocated_filter={{ allocated_filter }}{% endif %}">
-                        Previous
-                    </a>
-                </li>
-                {% endif %}
-
-                <li class="page-item active">
-                    <span class="page-link">
-                        Page {{ cdsr_items.number }} of {{ cdsr_items.paginator.num_pages }}
-                    </span>
-                </li>
-
-                {% if cdsr_items.has_next %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ cdsr_items.next_page_number }}{% for field, value in filter_fields|zip_list:filter_values %}&filter_field={{ field }}&filter_value={{ value }}{% endfor %}{% if allocated_filter %}&allocated_filter={{ allocated_filter }}{% endif %}">
-                        Next
-                    </a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ cdsr_items.paginator.num_pages }}{% for field, value in filter_fields|zip_list:filter_values %}&filter_field={{ field }}&filter_value={{ value }}{% endfor %}{% if allocated_filter %}&allocated_filter={{ allocated_filter }}{% endif %}">
-                        Last
-                    </a>
-                </li>
-                {% endif %}
-            </ul>
-        </nav>
     </div>
-    <!-- ✅ Pagination End -->
 </div>
+
+<style>
+    /* Custom Styles */
+    .card {
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.05);
+    }
+
+    .table {
+        margin-bottom: 0;
+    }
+
+    .table th {
+        font-weight: 600;
+        color: #495057;
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    .table td {
+        vertical-align: middle;
+        color: #495057;
+    }
+
+    .btn-group .btn {
+        padding: 0.375rem 0.75rem;
+        transition: all 0.2s ease;
+    }
+
+    .btn-group .btn:hover {
+        transform: translateY(-1px);
+    }
+
+    .form-control, .form-select {
+        border-radius: 6px;
+        border: 1px solid #dee2e6;
+        padding: 0.5rem 1rem;
+        transition: all 0.2s ease;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.15);
+    }
+
+    .pagination .page-link {
+        border: none;
+        padding: 0.5rem 1rem;
+        margin: 0 2px;
+        border-radius: 6px;
+        color: #495057;
+        transition: all 0.2s ease;
+    }
+
+    .pagination .page-item.active .page-link {
+        background-color: #007bff;
+        color: white;
+    }
+
+    .pagination .page-link:hover {
+        background-color: #f8f9fa;
+        color: #007bff;
+    }
+
+    .btn-outline-primary {
+        color: #007bff;
+        border-color: #007bff;
+    }
+
+    .btn-outline-primary:hover {
+        background-color: #007bff;
+        color: white;
+    }
+
+    .btn-outline-danger {
+        color: #dc3545;
+        border-color: #dc3545;
+    }
+
+    .btn-outline-danger:hover {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .input-group .btn {
+        border-radius: 0 6px 6px 0;
+    }
+
+    .input-group .form-select {
+        border-radius: 6px 0 0 6px;
+    }
+
+    .input-group .form-control {
+        border-radius: 0;
+    }
+
+    /* Empty State Styling */
+    .text-muted i {
+        color: #adb5bd;
+    }
+
+    /* Tooltip Styling */
+    .tooltip {
+        font-size: 0.875rem;
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+        .btn-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .table-responsive {
+            margin: 0 -1rem;
+        }
+    }
+</style>
+
 <script>
+    // Add Bootstrap JS CDN
+    const bootstrapScript = document.createElement('script');
+    bootstrapScript.src = 'https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js';
+    document.head.appendChild(bootstrapScript);
+
+    // Wait for Bootstrap to load before initializing tooltips
+    bootstrapScript.onload = function() {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+    };
+
+    // Add filter functionality
     document.getElementById("addFilter").addEventListener("click", function() {
-    let container = document.getElementById("filterContainer");
-    let newFilter = document.createElement("div");
-    newFilter.classList.add("d-flex", "gap-2", "mt-2");
-    newFilter.innerHTML = `
-        <select name="filter_field" class="form-select">
-            <option value="">-- Select Field --</option>
-            {% for field in fields %}
-            <option value="{{ field }}">{{ field|title }}</option>
-            {% endfor %}
-        </select>
-        <input type="text" name="filter_value" class="form-control" placeholder="Enter filter value">
-        <button type="button" class="btn btn-danger remove-filter">X</button>
-    `;
-    container.appendChild(newFilter);
-});
+        let container = document.getElementById("filterContainer");
+        let newFilter = document.createElement("div");
+        newFilter.classList.add("row", "g-3", "mt-2");
+        newFilter.innerHTML = `
+            <div class="col-md-4">
+                <div class="input-group">
+                    <select name="filter_field" class="form-select">
+                        <option value="">-- Select Field --</option>
+                        {% for field in fields %}
+                        <option value="{{ field }}">{{ field|title }}</option>
+                        {% endfor %}
+                    </select>
+                    <input type="text" name="filter_value" class="form-control" placeholder="Enter filter value">
+                    <button type="button" class="btn btn-outline-danger remove-filter">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        container.appendChild(newFilter);
+    });
 
-document.addEventListener("click", function(event) {
-    if (event.target.classList.contains("remove-filter")) {
-        event.target.parentElement.remove();
-    }
-});
+    // Remove filter functionality
+    document.addEventListener("click", function(event) {
+        if (event.target.closest(".remove-filter")) {
+            const row = event.target.closest(".row");
+            if (row) {
+                row.remove();
+            }
+        }
+    });
 
-// Add validation for bulk deallocation
-document.getElementById('bulkDeallocateBtn').addEventListener('click', function(e) {
-    const checkedItems = document.querySelectorAll('.item-checkbox:checked');
-    if (checkedItems.length === 0) {
-        e.preventDefault();
-        alert('Please select at least one item to deallocate.');
-    }
-});
+    // Handle filter form submission
+    document.getElementById("filterForm").addEventListener("submit", function(event) {
+        event.preventDefault();
+        
+        // Get all filter rows
+        const filterRows = document.querySelectorAll("#filterContainer .row");
+        const formData = new URLSearchParams();
+        
+        // Add each filter field and value to formData
+        filterRows.forEach((row, index) => {
+            const select = row.querySelector("select");
+            const input = row.querySelector("input");
+            if (select && input && select.value && input.value) {
+                formData.append(`filter_field`, select.value);
+                formData.append(`filter_value`, input.value);
+            }
+        });
+        
+        // Add sorting parameters if they exist
+        const sortBy = new URLSearchParams(window.location.search).get('sort_by');
+        const order = new URLSearchParams(window.location.search).get('order');
+        if (sortBy) formData.append('sort_by', sortBy);
+        if (order) formData.append('order', order);
+        
+        // Add page parameter if it exists
+        const page = new URLSearchParams(window.location.search).get('page');
+        if (page) formData.append('page', page);
+        
+        // Add allocated_filter parameter if it exists
+        const allocatedFilter = new URLSearchParams(window.location.search).get('allocated_filter');
+        if (allocatedFilter) formData.append('allocated_filter', allocatedFilter);
+        
+        // Redirect to the filtered URL
+        window.location.href = `${window.location.pathname}?${formData.toString()}`;
+    });
+
+    // Initialize existing filters from URL parameters
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const filterFields = urlParams.getAll('filter_field');
+        const filterValues = urlParams.getAll('filter_value');
+        
+        // Add existing filters from URL
+        filterFields.forEach((field, index) => {
+            if (field && filterValues[index]) {
+                if (index === 0) {
+                    // Update the first filter row
+                    const firstRow = document.querySelector("#filterContainer .row");
+                    if (firstRow) {
+                        const select = firstRow.querySelector("select");
+                        const input = firstRow.querySelector("input");
+                        if (select && input) {
+                            select.value = field;
+                            input.value = filterValues[index];
+                        }
+                    }
+                } else {
+                    // Add new filter rows for additional filters
+                    const container = document.getElementById("filterContainer");
+                    const newFilter = document.createElement("div");
+                    newFilter.classList.add("row", "g-3", "mt-2");
+                    newFilter.innerHTML = `
+                        <div class="col-md-4">
+                            <div class="input-group">
+                                <select name="filter_field" class="form-select">
+                                    <option value="">-- Select Field --</option>
+                                    {% for field in fields %}
+                                    <option value="{{ field }}">{{ field|title }}</option>
+                                    {% endfor %}
+                                </select>
+                                <input type="text" name="filter_value" class="form-control" placeholder="Enter filter value">
+                                <button type="button" class="btn btn-outline-danger remove-filter">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(newFilter);
+                    
+                    // Set the values for the new filter
+                    const select = newFilter.querySelector("select");
+                    const input = newFilter.querySelector("input");
+                    if (select && input) {
+                        select.value = field;
+                        input.value = filterValues[index];
+                    }
+                }
+            }
+        });
+    });
+
+    // Select all functionality
+    document.getElementById('selectAll').addEventListener('change', function() {
+        const checkboxes = document.querySelectorAll('.item-checkbox');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+    });
+
+    // Add validation for bulk deallocation
+    document.getElementById('bulkDeallocateBtn').addEventListener('click', function(e) {
+        const checkedItems = document.querySelectorAll('.item-checkbox:checked');
+        if (checkedItems.length === 0) {
+            e.preventDefault();
+            alert('Please select at least one item to deallocate.');
+        }
+    });
 </script>
-
 {% endblock %}

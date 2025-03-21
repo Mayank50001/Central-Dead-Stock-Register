@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect , get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.urls import reverse
 from .forms import DepartmentUserCreationForm, ItemForm  # ✅ Added ItemForm
 from django.db.models import Q , Sum
 from accounts.models import CustomUser
@@ -10,10 +11,19 @@ from django.core.paginator import Paginator
 from django.utils.timezone import now
 from datetime import timedelta
 import csv
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.utils.text import slugify
 from datetime import datetime
 
+def redirect_with_no_cache(url_name, *args, **kwargs):
+    """
+    Utility function to redirect with cache control headers to prevent browser back button
+    """
+    response = HttpResponseRedirect(reverse(url_name, args=args, kwargs=kwargs))
+    response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    return response
 
 @login_required
 @role_required(allowed_roles=['admin'])
@@ -26,7 +36,7 @@ def add_department_user(request):
             department_user.role = "department"  # ✅ Ensure role is department
             department_user.department = form.cleaned_data["department"]  # ✅ Assign department
             department_user.save()
-            return redirect("inventory:admin_dashboard")
+            return redirect_with_no_cache("inventory:admin_dashboard")
     else:
         form = DepartmentUserCreationForm()
     return render(request, "inventory/add_department_user.html", {"form": form})
@@ -248,7 +258,7 @@ def add_item(request):
         if form.is_valid():
             form.save()
             messages.success(request, "Item added successfully!")
-            return redirect("inventory:inventory_list")
+            return redirect_with_no_cache("inventory:inventory_list")
     else:
         form = ItemForm()
     return render(request, "inventory/add_item.html", {"form": form})
@@ -278,6 +288,22 @@ def inventory_list(request):
             filter_queries &= Q(**{f"{field}__icontains": value})
 
     items_list = items_list.filter(filter_queries)
+    
+    # Export to CSV if requested
+    if request.GET.get('export') == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        response['Content-Disposition'] = f'attachment; filename="inventory_{timestamp}.csv"'
+        
+        writer = csv.writer(response)
+        # Write headers
+        writer.writerow([field.replace('_', ' ').title() for field in fields])
+        
+        # Write data
+        for item in items_list:
+            writer.writerow([getattr(item, field) for field in fields])
+        
+        return response
 
     # ✅ Pagination
     paginator = Paginator(items_list, 50)  # 50 items per page
@@ -333,6 +359,7 @@ def cdsr_allocation_list(request):
     elif allocated_filter == "unallocated":
         cdsr_items = [item for item in cdsr_items if not item.is_allocated]
 
+    
     # ✅ Pagination
     paginator = Paginator(cdsr_items, 25)  # 50 items per page
     page_number = request.GET.get("page")
@@ -367,7 +394,7 @@ def allocate_form(request, cdsr_id):
 
         if allocation_type == "new" and total_quantity > true_remaining:
             messages.error(request, "Cannot allocate more than available remaining quantity.")
-            return redirect("inventory:allocate_form", cdsr_id=cdsr_id)
+            return redirect_with_no_cache("inventory:allocate_form", cdsr_id=cdsr_id)
         
         elif allocation_type == "reallocation":
             total_reallocated = 0
@@ -380,7 +407,7 @@ def allocate_form(request, cdsr_id):
                     # Validate reallocation quantity
                     if realloc_qty > existing_alloc.accepted_product_quantity:
                         messages.error(request, f"Cannot reallocate more than allocated quantity from {existing_alloc.department}")
-                        return redirect("inventory:allocate_form", cdsr_id=cdsr_id)
+                        return redirect_with_no_cache("inventory:allocate_form", cdsr_id=cdsr_id)
                     
                     total_reallocated += realloc_qty
                     
@@ -396,7 +423,7 @@ def allocate_form(request, cdsr_id):
             # Validate total reallocation
             if total_quantity > total_reallocated:
                 messages.error(request, "Cannot reallocate more than the selected quantities.")
-                return redirect("inventory:allocate_form", cdsr_id=cdsr_id)
+                return redirect_with_no_cache("inventory:allocate_form", cdsr_id=cdsr_id)
             
             # Update CDSR remaining quantity
             cdsr_item.remaining_quantity += total_reallocated
@@ -432,7 +459,7 @@ def allocate_form(request, cdsr_id):
         cdsr_item.save()
 
         messages.success(request, "CDSR item allocated successfully to multiple departments.")
-        return redirect("inventory:cdsr_allocation_list")
+        return redirect_with_no_cache("inventory:cdsr_allocation_list")
 
     context = {
         "cdsr_item": cdsr_item,
@@ -469,11 +496,11 @@ def bulk_allocate(request):
 
         if not selected_ids:
             messages.warning(request, "No items selected for allocation.")
-            return redirect("inventory:cdsr_allocation_list")
+            return redirect_with_no_cache("inventory:cdsr_allocation_list")
 
         if not department:
             messages.warning(request, "Please select a department.")
-            return redirect("inventory:bulk_allocate_confirm")
+            return redirect_with_no_cache("inventory:bulk_allocate_confirm")
 
         for cdsr_id, quantity, ddsr_no, ddsr_pg_no in zip(selected_ids, accepted_quantities, ddsr_nos, ddsr_pg_nos):
             cdsr_item = get_object_or_404(CDSR, cdsr_id=cdsr_id)
@@ -515,9 +542,9 @@ def bulk_allocate(request):
             cdsr_item.save()
 
         messages.success(request, f"Selected items allocated to {department} successfully.")
-        return redirect("inventory:cdsr_allocation_list")
+        return redirect_with_no_cache("inventory:cdsr_allocation_list")
 
-    return redirect("inventory:cdsr_allocation_list")  
+    return redirect_with_no_cache("inventory:cdsr_allocation_list")  
 
 
 @login_required
@@ -539,7 +566,7 @@ def deallocate_form(request, cdsr_id):
 
         if not dealloc_quantities:
             messages.error(request, "Please select at least one allocation to deallocate.")
-            return redirect("inventory:deallocate_form", cdsr_id=cdsr_id)
+            return redirect_with_no_cache("inventory:deallocate_form", cdsr_id=cdsr_id)
 
         # Process deallocation
         for alloc_id, qty in dealloc_quantities:
@@ -563,7 +590,7 @@ def deallocate_form(request, cdsr_id):
             cdsr_item.save()
 
         messages.success(request, "Successfully deallocated selected quantities.")
-        return redirect("inventory:cdsr_allocation_list")
+        return redirect_with_no_cache("inventory:cdsr_allocation_list")
 
     context = {
         "cdsr_item": cdsr_item,
@@ -620,7 +647,7 @@ def bulk_deallocate(request):
 
         if not deallocations:
             messages.error(request, "No valid deallocations specified.")
-            return redirect("inventory:cdsr_allocation_list")
+            return redirect_with_no_cache("inventory:cdsr_allocation_list")
 
         # Process deallocations
         for alloc_id, qty in deallocations.items():
@@ -647,9 +674,9 @@ def bulk_deallocate(request):
                 continue
 
         messages.success(request, "Successfully processed bulk deallocations.")
-        return redirect("inventory:cdsr_allocation_list")
+        return redirect_with_no_cache("inventory:cdsr_allocation_list")
 
-    return redirect("inventory:cdsr_allocation_list")
+    return redirect_with_no_cache("inventory:cdsr_allocation_list")
 
 @login_required
 @role_required(allowed_roles=['department'])
@@ -711,3 +738,94 @@ def department_inventory_list(request):
     }
 
     return render(request, "inventory/department_inventory_list.html", context)
+
+@login_required
+@role_required(allowed_roles=['admin'])
+def edit_item(request, cdsr_id):
+    cdsr_item = get_object_or_404(CDSR, cdsr_id=cdsr_id)
+    
+    if request.method == "POST":
+        form = ItemForm(request.POST, instance=cdsr_item)
+        if form.is_valid():
+            # Get the old quantity before saving
+            old_quantity = cdsr_item.product_quantity
+            new_quantity = form.cleaned_data['product_quantity']
+            
+            # Get total allocated quantity
+            total_allocated = DDSR.objects.filter(cdsr_table_id=cdsr_id).aggregate(
+                total=Sum('accepted_product_quantity')
+            )['total'] or 0
+            
+            # Check if new quantity is less than allocated quantity
+            if new_quantity < total_allocated:
+                messages.error(request, f"Cannot reduce quantity below allocated amount ({total_allocated})")
+                return render(request, "inventory/edit_item.html", {
+                    "form": form,
+                    "cdsr_item": cdsr_item
+                })
+            
+            # Update the item
+            updated_item = form.save(commit=False)
+            
+            # Update remaining quantity based on the difference
+            quantity_diff = new_quantity - old_quantity
+            updated_item.remaining_quantity += quantity_diff
+            
+            # Update total cost if single cost changed
+            if 'single_cost' in form.changed_data:
+                updated_item.total_cost = updated_item.product_quantity * updated_item.single_cost
+            
+            updated_item.save()
+            
+            # Update total cost in all DDSR entries if single cost changed
+            if 'single_cost' in form.changed_data:
+                DDSR.objects.filter(cdsr_table_id=cdsr_id).update(
+                    cost_unit=updated_item.single_cost,
+                    total_cost=models.F('accepted_product_quantity') * updated_item.single_cost
+                )
+            
+            messages.success(request, "Item updated successfully!")
+            return redirect_with_no_cache("inventory:inventory_list")
+    else:
+        form = ItemForm(instance=cdsr_item)
+    
+    # Get allocation information
+    allocations = DDSR.objects.filter(cdsr_table_id=cdsr_id)
+    total_allocated = allocations.aggregate(total=Sum('accepted_product_quantity'))['total'] or 0
+    
+    context = {
+        "form": form,
+        "cdsr_item": cdsr_item,
+        "allocations": allocations,
+        "total_allocated": total_allocated
+    }
+    
+    return render(request, "inventory/edit_item.html", context)
+
+@login_required
+@role_required(allowed_roles=['admin'])
+def delete_item(request, cdsr_id):
+    cdsr_item = get_object_or_404(CDSR, cdsr_id=cdsr_id)
+    
+    if request.method == "POST":
+        # Check if item has any allocations
+        allocations = DDSR.objects.filter(cdsr_table_id=cdsr_id)
+        if allocations.exists():
+            messages.error(request, "Cannot delete item with existing allocations. Please deallocate first.")
+            return redirect_with_no_cache("inventory:inventory_list")
+            
+        cdsr_item.delete()
+        messages.success(request, "Item deleted successfully!")
+        return redirect_with_no_cache("inventory:inventory_list")
+    
+    # Get allocation information for display
+    allocations = DDSR.objects.filter(cdsr_table_id=cdsr_id)
+    total_allocated = allocations.aggregate(total=Sum('accepted_product_quantity'))['total'] or 0
+    
+    context = {
+        "cdsr_item": cdsr_item,
+        "allocations": allocations,
+        "total_allocated": total_allocated
+    }
+    
+    return render(request, "inventory/delete_item.html", context)

@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import add_department_user, admin_dashboard, department_dashboard, add_item, inventory_list , cdsr_allocation_list , allocate_form , bulk_allocate_confirm , bulk_allocate, deallocate_form, bulk_deallocate, bulk_deallocate_confirm , department_inventory_list
+from .views import add_department_user, admin_dashboard, department_dashboard, add_item, inventory_list , cdsr_allocation_list , allocate_form , bulk_allocate_confirm , bulk_allocate, deallocate_form, bulk_deallocate, bulk_deallocate_confirm , department_inventory_list, edit_item, delete_item
 app_name = 'inventory'
 
 urlpatterns = [
@@ -16,4 +16,6 @@ urlpatterns = [
     path('bulk-deallocate/', bulk_deallocate, name='bulk_deallocate'),
     path('bulk-deallocate/confirm/', bulk_deallocate_confirm, name='bulk_deallocate_confirm'),
     path('department/inventory/', department_inventory_list, name='department_inventory_list'),
+    path('edit-item/<int:cdsr_id>/', edit_item, name='edit_item'),
+    path('delete-item/<int:cdsr_id>/', delete_item, name='delete_item'),
 ]

@@ -82,9 +82,9 @@ WSGI_APPLICATION = "inventory_management_system.wsgi.application"
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'django_db',
-        'USER': 'django_user',
-        'PASSWORD': 'Er2-30652',
+        'NAME': 'deadstockregister',
+        'USER': 'root',
+        'PASSWORD': 'hems@2006',
         'HOST': 'localhost',  # or '127.0.0.1'
         'PORT': '3306',
         'OPTIONS': {
