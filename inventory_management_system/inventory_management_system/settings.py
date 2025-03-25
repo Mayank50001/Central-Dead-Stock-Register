@@ -27,7 +27,7 @@ SECRET_KEY = "django-insecure-i)&p)chc_3ash6zqxwt(&(@xv*v$q06tk+5ctg%mqht@8sqqai
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -85,7 +85,7 @@ DATABASES = {
         'NAME': 'deadstockregister',
         'USER': 'sarthak',
         'PASSWORD': 'sarthak@1978',
-        'HOST': 'localhost',  # or '127.0.0.1'
+        'HOST': '192.168.24.186',  # or '127.0.0.1'
         'PORT': '3306',
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
@@ -136,3 +136,5 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = 'accounts.CustomUser'
+
+

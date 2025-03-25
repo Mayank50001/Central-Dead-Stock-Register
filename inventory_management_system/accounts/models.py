@@ -26,7 +26,9 @@ class CustomUser(AbstractUser):
         ('department', 'Department'),
     ]
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='department')
-    department = models.CharField(max_length=255, blank=True, null=True)  # 🆕 Added department field
+    department = models.CharField(max_length=255, blank=True, null=True)
+    last_ip_address = models.GenericIPAddressField(null=True, blank=True)  # To track the last IP address
+    last_login_device = models.DateTimeField(null=True, blank=True)  # To track when the device was last used
 
     objects = CustomUserManager()
 
@@ -34,4 +36,4 @@ class CustomUser(AbstractUser):
     REQUIRED_FIELDS = []  # Email and password are required by default
 
     def __str__(self):
-        return f"{self.email} ({self.role})"
+        return self.email

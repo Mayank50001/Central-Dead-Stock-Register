@@ -82,13 +82,13 @@
                                 <th>Product Name</th>
                                 <th>Initial Quantity</th>
                                 <th>Current Remaining</th>
-                                <th>Allocation Status</th>
+                                <th>Allocated Departments</th>
                                 <th class="text-center">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for item in cdsr_items %}
-                            <tr class="{% if item.is_allocated %}table-info{% endif %}">
+                            <tr class="{% if item.is_fully_allocated %}table-success{% endif %}">
                                 <td class="text-center">
                                     <input type="checkbox" name="selected_items" value="{{ item.cdsr_id }}" class="form-check-input item-checkbox">
                                 </td>
@@ -97,14 +97,14 @@
                                 <td>{{ item.product_description }}</td>
                                 <td>{{ item.product_quantity }}</td>
                                 <td>{{ item.remaining_quantity }}</td>
-                                <td>{{ item.allocated_department }}</td>
+                                <td>{{ item.allocated_departments|default:"Not Allocated" }}</td>
                                 <td class="text-center">
                                     <div class="btn-group">
                                         <a href="{% url 'inventory:allocate_form' item.cdsr_id %}"
-                                            class="btn btn-sm {% if item.is_allocated %}btn-outline-warning{% else %}btn-outline-primary{% endif %}"
+                                            class="btn btn-sm {% if item.is_fully_allocated %}btn-outline-warning{% else %}btn-outline-primary{% endif %}"
                                             data-bs-toggle="tooltip"
-                                            title="{% if item.is_allocated %}Reallocate{% else %}Allocate{% endif %}">
-                                            <i class="fas {% if item.is_allocated %}fa-exchange-alt{% else %}fa-plus{% endif %}"></i>
+                                            title="{% if item.is_fully_allocated %}Reallocate{% else %}Allocate{% endif %}">
+                                            <i class="fas {% if item.is_fully_allocated %}fa-exchange-alt{% else %}fa-plus{% endif %}"></i>
                                         </a>
                                         {% if item.has_allocations %}
                                         <a href="{% url 'inventory:deallocate_form' item.cdsr_id %}" 

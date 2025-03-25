@@ -1,11 +1,11 @@
-from django.shortcuts import render, redirect , get_object_or_404
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.urls import reverse
 from .forms import DepartmentUserCreationForm, ItemForm  # ✅ Added ItemForm
-from django.db.models import Q , Sum , OuterRef, Subquery, Case, When, Value, BooleanField, Exists
+from django.db.models import Q, Sum, OuterRef, Subquery, Case, When, Value, BooleanField, Exists, Func, CharField , F
 from accounts.models import CustomUser
-from .models import CDSR , DDSR  # ✅ CDSR Model Import
+from .models import CDSR, DDSR  # ✅ CDSR Model Import
 from .decorators import role_required
 from django.core.paginator import Paginator
 from django.utils.timezone import now
@@ -23,6 +23,9 @@ def redirect_with_no_cache(url_name, *args, **kwargs):
     response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     response['Pragma'] = 'no-cache'
     response['Expires'] = '0'
+    response['X-Frame-Options'] = 'DENY'
+    response['X-Content-Type-Options'] = 'nosniff'
+    response['Clear-Site-Data'] = '"cache", "cookies", "storage"'
     return response
 
 @login_required
@@ -32,10 +35,11 @@ def add_department_user(request):
         form = DepartmentUserCreationForm(request.POST)
         if form.is_valid():
             department_user = form.save(commit=False)
-            department_user.set_password(form.cleaned_data["password"])  # Hash the password
-            department_user.role = "department"  # ✅ Ensure role is department
-            department_user.department = form.cleaned_data["department"]  # ✅ Assign department
+            department_user.set_password(form.cleaned_data["password"])
+            department_user.role = "department"
+            department_user.department = form.cleaned_data["department"]
             department_user.save()
+            messages.success(request, "Department user added successfully!")
             return redirect_with_no_cache("inventory:admin_dashboard")
     else:
         form = DepartmentUserCreationForm()
@@ -320,6 +324,20 @@ def inventory_list(request):
     })
 
 
+from django.db.models import Value, F, CharField
+from django.db.models.functions import Concat
+
+class GroupConcat(Func):
+    function = 'GROUP_CONCAT'
+    template = "%(function)s(%(distinct)s%(expressions)s SEPARATOR %(separator)s)"
+    output_field = CharField()
+
+    def __init__(self, expression, distinct=False, separator=', ', **extra):
+        super().__init__(expression, **extra)
+        self.extra['distinct'] = 'DISTINCT ' if distinct else ''
+        self.extra['separator'] = f"'{separator}'"
+
+
 @login_required
 @role_required(allowed_roles=['admin'])
 def cdsr_allocation_list(request):
@@ -336,27 +354,30 @@ def cdsr_allocation_list(request):
     # Efficient query without select_related (since there's no ForeignKey relationship)
     cdsr_items = CDSR.objects.filter(filter_queries)
 
-    # Add annotations for 'is_fully_allocated' and 'allocated_department'
+    # Add annotations for 'is_fully_allocated' and 'allocated_departments'
     cdsr_items = cdsr_items.annotate(
-        is_fully_allocated=Case(
-            When(remaining_quantity=0, then=Value(True)),
-            default=Value(False),
-            output_field=BooleanField(),
-        ),
-        # Get the department allocation information using Subquery
-        allocated_department=Subquery(
-            DDSR.objects.filter(cdsr_table_id=OuterRef('cdsr_id'))
-            .values('department')
-            .annotate(total_allocated=Sum('accepted_product_quantity'))
-            .values('department')
-            .order_by()[:1]  # Limit to the first matching department
-        ),
-        # Check if the item has any allocations (using Exists)
-        has_allocations=Exists(
-            DDSR.objects.filter(cdsr_table_id=OuterRef('cdsr_id'))
-        ),
-    )
-
+    is_fully_allocated=Case(
+        When(remaining_quantity=0, then=Value(True)),
+        default=Value(False),
+        output_field=BooleanField(),
+    ),
+    allocated_departments=Subquery(
+        DDSR.objects.filter(cdsr_table_id=OuterRef('cdsr_id'))
+        .values('cdsr_table_id')
+        .annotate(
+            departments=GroupConcat(
+                Concat(F('department'), Value(' ('), F('accepted_product_quantity'), Value(')')),
+                distinct=True,
+                separator=', '
+            )
+        )
+        .values('departments')[:1]
+    ),
+    has_allocations=Exists(
+        DDSR.objects.filter(cdsr_table_id=OuterRef('cdsr_id'))
+    ),
+    )   
+    
     # Handle the allocation filter condition (allocated/unallocated)
     allocated_filter = request.GET.get("allocated_filter")
     if allocated_filter == "allocated":
@@ -374,16 +395,15 @@ def cdsr_allocation_list(request):
         "cdsr_items": cdsr_item_list,
         "fields": [field.name for field in CDSR._meta.fields],  # Get all column names
         "filter_fields": filter_fields,
-        "filter_values": filter_values
+        "filter_values": filter_values,
+        "allocated_filter": allocated_filter,
     })
-
 
 
 @login_required
 @role_required(allowed_roles=['admin'])
 def allocate_form(request, cdsr_id):
     cdsr_item = get_object_or_404(CDSR, cdsr_id=cdsr_id)
-    # Get all existing allocations
     existing_allocations = DDSR.objects.filter(cdsr_table_id=cdsr_id)
     total_allocated = sum(alloc.accepted_product_quantity for alloc in existing_allocations)
     true_remaining = cdsr_item.product_quantity - total_allocated
@@ -404,37 +424,30 @@ def allocate_form(request, cdsr_id):
         
         elif allocation_type == "reallocation":
             total_reallocated = 0
-            # Handle each selected allocation
             for alloc_id in reallocation_from:
                 realloc_qty = int(request.POST.get(f"reallocation_quantity_{alloc_id}", 0))
                 if realloc_qty > 0:
                     existing_alloc = DDSR.objects.get(ddsr_id=alloc_id)
                     
-                    # Validate reallocation quantity
                     if realloc_qty > existing_alloc.accepted_product_quantity:
                         messages.error(request, f"Cannot reallocate more than allocated quantity from {existing_alloc.department}")
                         return redirect_with_no_cache("inventory:allocate_form", cdsr_id=cdsr_id)
                     
                     total_reallocated += realloc_qty
                     
-                    # If taking partial quantity, update existing allocation
                     if realloc_qty < existing_alloc.accepted_product_quantity:
                         existing_alloc.accepted_product_quantity -= realloc_qty
                         existing_alloc.total_cost = existing_alloc.accepted_product_quantity * existing_alloc.cost_unit
                         existing_alloc.save()
                     else:
-                        # If taking all quantity, delete the allocation
                         existing_alloc.delete()
 
-            # Validate total reallocation
             if total_quantity > total_reallocated:
                 messages.error(request, "Cannot reallocate more than the selected quantities.")
                 return redirect_with_no_cache("inventory:allocate_form", cdsr_id=cdsr_id)
             
-            # Update CDSR remaining quantity
             cdsr_item.remaining_quantity += total_reallocated
 
-        # Create DDSR entries for each department
         for department, ddsr_no, ddsr_pg_no, quantity in zip(departments, ddsr_nos, ddsr_pg_nos, quantities):
             DDSR.objects.create(
                 cdsr_name=cdsr_item.cdsr_name,
@@ -456,7 +469,6 @@ def allocate_form(request, cdsr_id):
                 year_of_buy=cdsr_item.purchase_year
             )
 
-        # Update remaining quantity in CDSR
         if allocation_type == "new":
             cdsr_item.remaining_quantity -= total_quantity
         else:  # reallocation
@@ -512,13 +524,11 @@ def bulk_allocate(request):
             cdsr_item = get_object_or_404(CDSR, cdsr_id=cdsr_id)
             quantity = int(quantity)
 
-            # Handle existing allocation
             existing_allocation = DDSR.objects.filter(cdsr_table_id=cdsr_id).first()
             if existing_allocation:
                 cdsr_item.remaining_quantity += existing_allocation.accepted_product_quantity
                 existing_allocation.delete()
 
-            # Check if allocation is valid
             if quantity > cdsr_item.remaining_quantity:
                 messages.error(request, f"Cannot allocate {quantity} units for {cdsr_item.product_description}. Only {cdsr_item.remaining_quantity} available.")
                 continue
@@ -528,7 +538,7 @@ def bulk_allocate(request):
                 cdsr_no=cdsr_item.cdsr_no,
                 cdsr_page_no=cdsr_item.cdsr_pg_no,
                 cdsr_table_id=cdsr_item.cdsr_id,
-                cost_unit = cdsr_item.single_cost,
+                cost_unit=cdsr_item.single_cost,
                 date_of_receive=now(),
                 ddsr_no=ddsr_no,
                 ddsr_pg_no=ddsr_pg_no,
@@ -543,7 +553,6 @@ def bulk_allocate(request):
                 year_of_buy=cdsr_item.purchase_year
             )
 
-            # Update remaining quantity
             cdsr_item.remaining_quantity -= quantity
             cdsr_item.save()
 
@@ -564,7 +573,6 @@ def deallocate_form(request, cdsr_id):
         selected_allocations = request.POST.getlist("deallocate_from")
         dealloc_quantities = []
         
-        # Collect quantities to deallocate
         for alloc_id in selected_allocations:
             qty = int(request.POST.get(f"deallocation_quantity_{alloc_id}", 0))
             if qty > 0:
@@ -574,7 +582,6 @@ def deallocate_form(request, cdsr_id):
             messages.error(request, "Please select at least one allocation to deallocate.")
             return redirect_with_no_cache("inventory:deallocate_form", cdsr_id=cdsr_id)
 
-        # Process deallocation
         for alloc_id, qty in dealloc_quantities:
             allocation = DDSR.objects.get(ddsr_id=alloc_id)
             
@@ -583,15 +590,12 @@ def deallocate_form(request, cdsr_id):
                 continue
 
             if qty == allocation.accepted_product_quantity:
-                # If deallocating entire quantity, delete the allocation
                 allocation.delete()
             else:
-                # If partial deallocation, update the allocation
                 allocation.accepted_product_quantity -= qty
                 allocation.total_cost = allocation.accepted_product_quantity * allocation.cost_unit
                 allocation.save()
 
-            # Update CDSR remaining quantity
             cdsr_item.remaining_quantity += qty
             cdsr_item.save()
 
@@ -640,7 +644,6 @@ def bulk_deallocate(request):
     if request.method == "POST":
         deallocations = {}
         
-        # Collect all deallocation data from the form
         for key, value in request.POST.items():
             if key.startswith('deallocation_quantity_'):
                 try:
@@ -655,7 +658,6 @@ def bulk_deallocate(request):
             messages.error(request, "No valid deallocations specified.")
             return redirect_with_no_cache("inventory:cdsr_allocation_list")
 
-        # Process deallocations
         for alloc_id, qty in deallocations.items():
             try:
                 allocation = DDSR.objects.get(ddsr_id=alloc_id)
@@ -753,16 +755,13 @@ def edit_item(request, cdsr_id):
     if request.method == "POST":
         form = ItemForm(request.POST, instance=cdsr_item)
         if form.is_valid():
-            # Get the old quantity before saving
             old_quantity = cdsr_item.product_quantity
             new_quantity = form.cleaned_data['product_quantity']
             
-            # Get total allocated quantity
             total_allocated = DDSR.objects.filter(cdsr_table_id=cdsr_id).aggregate(
                 total=Sum('accepted_product_quantity')
             )['total'] or 0
             
-            # Check if new quantity is less than allocated quantity
             if new_quantity < total_allocated:
                 messages.error(request, f"Cannot reduce quantity below allocated amount ({total_allocated})")
                 return render(request, "inventory/edit_item.html", {
@@ -770,20 +769,15 @@ def edit_item(request, cdsr_id):
                     "cdsr_item": cdsr_item
                 })
             
-            # Update the item
             updated_item = form.save(commit=False)
-            
-            # Update remaining quantity based on the difference
             quantity_diff = new_quantity - old_quantity
             updated_item.remaining_quantity += quantity_diff
             
-            # Update total cost if single cost changed
             if 'single_cost' in form.changed_data:
                 updated_item.total_cost = updated_item.product_quantity * updated_item.single_cost
             
             updated_item.save()
             
-            # Update total cost in all DDSR entries if single cost changed
             if 'single_cost' in form.changed_data:
                 DDSR.objects.filter(cdsr_table_id=cdsr_id).update(
                     cost_unit=updated_item.single_cost,
@@ -795,7 +789,6 @@ def edit_item(request, cdsr_id):
     else:
         form = ItemForm(instance=cdsr_item)
     
-    # Get allocation information
     allocations = DDSR.objects.filter(cdsr_table_id=cdsr_id)
     total_allocated = allocations.aggregate(total=Sum('accepted_product_quantity'))['total'] or 0
     
@@ -814,7 +807,6 @@ def delete_item(request, cdsr_id):
     cdsr_item = get_object_or_404(CDSR, cdsr_id=cdsr_id)
     
     if request.method == "POST":
-        # Check if item has any allocations
         allocations = DDSR.objects.filter(cdsr_table_id=cdsr_id)
         if allocations.exists():
             messages.error(request, "Cannot delete item with existing allocations. Please deallocate first.")
@@ -824,7 +816,6 @@ def delete_item(request, cdsr_id):
         messages.success(request, "Item deleted successfully!")
         return redirect_with_no_cache("inventory:inventory_list")
     
-    # Get allocation information for display
     allocations = DDSR.objects.filter(cdsr_table_id=cdsr_id)
     total_allocated = allocations.aggregate(total=Sum('accepted_product_quantity'))['total'] or 0
     
@@ -835,3 +826,4 @@ def delete_item(request, cdsr_id):
     }
     
     return render(request, "inventory/delete_item.html", context)
+

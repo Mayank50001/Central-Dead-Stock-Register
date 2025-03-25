@@ -4,22 +4,28 @@ from accounts.models import CustomUser
 from .models import CDSR
 
 DEPARTMENT_CHOICES = [
-    
-    ('Computer Technology', 'Computer Technology'),
-    ('Information Technology', 'Information Technology'),
-    ('Civil Engineering', 'Civil Engineering'),
-    ('Mechanical Engineering', 'Mechanical Engineering'),
+    ('Applied Mechanics', 'Applied Mechanics'),
     ('Automobile Engineering', 'Automobile Engineering'),
-    ('Plastic Engineering', 'Plastic Engineering'),
+    ('Civil Engineering', 'Civil Engineering'),
+    ('Computer Technology', 'Computer Technology'),
+    ('Dress Design and Garment Manufacturing', 'Dress Design and Garment Manufacturing'),
     ('Electrical Engineering', 'Electrical Engineering'),
+    ('Electronics and Telecommunication Engineering', 'Electronics and Telecommunication Engineering'),
+    ('Exam Section', 'Exam Section'),
+    ('Gymkhana', 'Gymkhana'),
+    ('Hostel Boys', 'Hostel Boys'),
+    ('Hostel Girls', 'Hostel Girls'),
+    ('Information Technology', 'Information Technology'),
     ('Interior Design & Decoration', 'Interior Design & Decoration'),
-    ('Electronics & Telecommunication', 'Electronics & Telecommunication'),
-    ('Dress Design & Garment Manu', 'Dress Design & Garment Manu'),
-    ('Interior Design & Manu', 'Interior Design & Manu'),
+    ('Library', 'Library'),
+    ('Mechanical Engineering', 'Mechanical Engineering'),
     ('Mechatronics engineering', 'Mechatronics engineering'),
-    
+    ('Office', 'Office'),
+    ('Plastic Engineering', 'Plastic Engineering'),
+    ('Science (Chemistry)' , 'Science (Chemistry)'),
+    ('Science (Physics)' , 'Science (Physics)'),
+    ('Workshop', 'Workshop'),
 
-    
 ]
 
 class DepartmentUserCreationForm(forms.ModelForm):
