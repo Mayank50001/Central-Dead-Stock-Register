@@ -33,6 +33,7 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    'admin_user_management',
     'accounts' , 
     'inventory',
     "django.contrib.admin",
@@ -82,10 +83,10 @@ WSGI_APPLICATION = "inventory_management_system.wsgi.application"
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'deadstockregister',
-        'USER': 'sarthak',
-        'PASSWORD': 'sarthak@1978',
-        'HOST': '192.168.24.186',  # or '127.0.0.1'
+        'NAME': 'django_db',
+        'USER': 'django_user',
+        'PASSWORD': 'Er2-30652',
+        'HOST': '192.168.24.218',  # or '127.0.0.1'
         'PORT': '3306',
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
@@ -137,4 +138,14 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = 'accounts.CustomUser'
 
+
+TIME_ZONE = 'Asia/Kolkata'
+USE_TZ = True                                                                                                                                   
+USE_I18N = True
+USE_L10N = True
+
+# Session Settings
+SESSION_COOKIE_AGE = 1200  # 20 minutes in seconds
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_SAVE_EVERY_REQUEST = True
 

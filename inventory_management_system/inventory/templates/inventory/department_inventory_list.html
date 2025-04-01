@@ -15,8 +15,8 @@
     <div class="card shadow-sm">
         <div class="card-body">
             <!-- Filter Section -->
-            <div class="mb-4">
-                <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center mb--3">
                     <h5 class="card-title mb-0">Filters</h5>
                     <div>
                         <a href="?{{ request.GET.urlencode }}&export=csv" class="btn btn-outline-success btn-sm">
@@ -24,7 +24,29 @@
                         </a>
                     </div>
                 </div>
-                
+                <!-- Date Range Filter -->
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div class="date-range-filter p-3 bg-light rounded">
+                            <h6 class="mb-3">Date Range Filter</h6>
+                            <form method="get" class="row g-3">
+                                <div class="col-md-4">
+                                    <label for="from_date" class="form-label">From Date</label>
+                                    <input type="date" class="form-control" id="from_date" name="from_date" value="{{ request.GET.from_date }}">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="to_date" class="form-label">To Date</label>
+                                    <input type="date" class="form-control" id="to_date" name="to_date" value="{{ request.GET.to_date }}">
+                                </div>
+                                <div class="col-md-4 d-flex align-items-end">
+                                    <button type="submit" class="btn btn-primary me-2">Apply Date Filter</button>
+                                    <a href="{% url 'inventory:department_inventory_list' %}" class="btn btn-secondary">Clear Date Filter</a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <!-- Filter Section -->
                 <form method="GET" id="filterForm" class="mb-3">
                     <div id="filterContainer">
                         <div class="row g-3">
@@ -64,7 +86,7 @@
                         <tr>
                             {% for field in fields %}
                             <th class="py-3">
-                                <a href="?sort_by={{ field }}&order={% if sort_by == field and order == 'asc' %}desc{% else %}asc{% endif %}{% for field, value in filter_fields|zip_list:filter_values %}&filter_field={{ field }}&filter_value={{ value }}{% endfor %}"
+                                <a href="?sort_by={{ field }}&order={% if sort_by == field and order == 'asc' %}desc{% else %}asc{% endif %}{% for field, value in filter_fields|zip_list:filter_values %}&filter_field={{ field }}&filter_value={{ value }}{% endfor %}{% if from_date %}&from_date={{ from_date }}{% endif %}{% if to_date %}&to_date={{ to_date }}{% endif %}"
                                     class="text-decoration-none text-dark d-flex align-items-center">
                                     {{ field|title }}
                                     {% if sort_by == field %}
@@ -103,12 +125,12 @@
                     <ul class="pagination">
                         {% if items.has_previous %}
                         <li class="page-item">
-                            <a class="page-link" href="?page=1{% if sort_by %}&sort_by={{ sort_by }}&order={{ order }}{% endif %}{% for field, value in filter_fields|zip_list:filter_values %}&filter_field={{ field }}&filter_value={{ value }}{% endfor %}">
+                            <a class="page-link" href="?page=1{% if sort_by %}&sort_by={{ sort_by }}&order={{ order }}{% endif %}{% for field, value in filter_fields|zip_list:filter_values %}&filter_field={{ field }}&filter_value={{ value }}{% endfor %}{% if from_date %}&from_date={{ from_date }}{% endif %}{% if to_date %}&to_date={{ to_date }}{% endif %}">
                                 <i class="fas fa-angle-double-left"></i>
                             </a>
                         </li>
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ items.previous_page_number }}{% if sort_by %}&sort_by={{ sort_by }}&order={{ order }}{% endif %}{% for field, value in filter_fields|zip_list:filter_values %}&filter_field={{ field }}&filter_value={{ value }}{% endfor %}">
+                            <a class="page-link" href="?page={{ items.previous_page_number }}{% if sort_by %}&sort_by={{ sort_by }}&order={{ order }}{% endif %}{% for field, value in filter_fields|zip_list:filter_values %}&filter_field={{ field }}&filter_value={{ value }}{% endfor %}{% if from_date %}&from_date={{ from_date }}{% endif %}{% if to_date %}&to_date={{ to_date }}{% endif %}">
                                 <i class="fas fa-angle-left"></i>
                             </a>
                         </li>
@@ -121,19 +143,19 @@
                             </li>
                             {% elif num > items.number|add:'-3' and num < items.number|add:'3' %}
                             <li class="page-item">
-                                <a class="page-link" href="?page={{ num }}{% if sort_by %}&sort_by={{ sort_by }}&order={{ order }}{% endif %}{% for field, value in filter_fields|zip_list:filter_values %}&filter_field={{ field }}&filter_value={{ value }}{% endfor %}">{{ num }}</a>
+                                <a class="page-link" href="?page={{ num }}{% if sort_by %}&sort_by={{ sort_by }}&order={{ order }}{% endif %}{% for field, value in filter_fields|zip_list:filter_values %}&filter_field={{ field }}&filter_value={{ value }}{% endfor %}{% if from_date %}&from_date={{ from_date }}{% endif %}{% if to_date %}&to_date={{ to_date }}{% endif %}">{{ num }}</a>
                             </li>
                             {% endif %}
                         {% endfor %}
 
                         {% if items.has_next %}
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ items.next_page_number }}{% if sort_by %}&sort_by={{ sort_by }}&order={{ order }}{% endif %}{% for field, value in filter_fields|zip_list:filter_values %}&filter_field={{ field }}&filter_value={{ value }}{% endfor %}">
+                            <a class="page-link" href="?page={{ items.next_page_number }}{% if sort_by %}&sort_by={{ sort_by }}&order={{ order }}{% endif %}{% for field, value in filter_fields|zip_list:filter_values %}&filter_field={{ field }}&filter_value={{ value }}{% endfor %}{% if from_date %}&from_date={{ from_date }}{% endif %}{% if to_date %}&to_date={{ to_date }}{% endif %}">
                                 <i class="fas fa-angle-right"></i>
                             </a>
                         </li>
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ items.paginator.num_pages }}{% if sort_by %}&sort_by={{ sort_by }}&order={{ order }}{% endif %}{% for field, value in filter_fields|zip_list:filter_values %}&filter_field={{ field }}&filter_value={{ value }}{% endfor %}">
+                            <a class="page-link" href="?page={{ items.paginator.num_pages }}{% if sort_by %}&sort_by={{ sort_by }}&order={{ order }}{% endif %}{% for field, value in filter_fields|zip_list:filter_values %}&filter_field={{ field }}&filter_value={{ value }}{% endfor %}{% if from_date %}&from_date={{ from_date }}{% endif %}{% if to_date %}&to_date={{ to_date }}{% endif %}">
                                 <i class="fas fa-angle-double-right"></i>
                             </a>
                         </li>
@@ -293,6 +315,12 @@
         const order = new URLSearchParams(window.location.search).get('order');
         if (sortBy) formData.append('sort_by', sortBy);
         if (order) formData.append('order', order);
+        
+        // Add date filter parameters if they exist
+        const fromDate = new URLSearchParams(window.location.search).get('from_date');
+        const toDate = new URLSearchParams(window.location.search).get('to_date');
+        if (fromDate) formData.append('from_date', fromDate);
+        if (toDate) formData.append('to_date', toDate);
         
         // Add page parameter if it exists
         const page = new URLSearchParams(window.location.search).get('page');

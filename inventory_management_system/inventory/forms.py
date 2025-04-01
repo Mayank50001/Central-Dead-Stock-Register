@@ -1,59 +1,39 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
-from accounts.models import CustomUser
 from .models import CDSR
 
-DEPARTMENT_CHOICES = [
-    ('Applied Mechanics', 'Applied Mechanics'),
-    ('Automobile Engineering', 'Automobile Engineering'),
-    ('Civil Engineering', 'Civil Engineering'),
-    ('Computer Technology', 'Computer Technology'),
-    ('Dress Design and Garment Manufacturing', 'Dress Design and Garment Manufacturing'),
-    ('Electrical Engineering', 'Electrical Engineering'),
-    ('Electronics and Telecommunication Engineering', 'Electronics and Telecommunication Engineering'),
-    ('Exam Section', 'Exam Section'),
-    ('Gymkhana', 'Gymkhana'),
-    ('Hostel Boys', 'Hostel Boys'),
-    ('Hostel Girls', 'Hostel Girls'),
-    ('Information Technology', 'Information Technology'),
-    ('Interior Design & Decoration', 'Interior Design & Decoration'),
-    ('Library', 'Library'),
-    ('Mechanical Engineering', 'Mechanical Engineering'),
-    ('Mechatronics engineering', 'Mechatronics engineering'),
-    ('Office', 'Office'),
-    ('Plastic Engineering', 'Plastic Engineering'),
-    ('Science (Chemistry)' , 'Science (Chemistry)'),
-    ('Science (Physics)' , 'Science (Physics)'),
-    ('Workshop', 'Workshop'),
-
+# Register Choices
+REGISTER_CHOICES = [
+    ('C/S DSR/M&E', 'C/S DSR/M&E'),
+    ('C/S DSR/Furniture', 'C/S DSR/Furniture'),
+    ('C/S DSR/CC/Furniture', 'C/S DSR/CC/Furniture'),
+    ('C/S DSR/UPSBTY/SCR', 'C/S DSR/UPSBTY/SCR'),
+    ('C/S DSR/Semi C R', 'C/S DSR/Semi C R'),
+    ('C/S DSR/M&E/World Bank', 'C/S DSR/M&E/World Bank'),
+    ('C/S DSR/CC', 'C/S DSR/CC'),
+    ('C/S DSR/PRU/WB', 'C/S DSR/PRU/WB'),
 ]
 
-class DepartmentUserCreationForm(forms.ModelForm):
-    department = forms.ChoiceField(
-        choices=DEPARTMENT_CHOICES, 
-        widget=forms.Select(attrs={'class': 'form-control'})
-    )
 
-    class Meta:
-        model = CustomUser
-        fields = ['email', 'password', 'department']
-
-    def save(self, commit=True):
-        user = super().save(commit=False)
-        user.set_password(self.cleaned_data["password"])  # Hash password
-        if commit:
-            user.save()
-        return user
 
 class ItemForm(forms.ModelForm):
     class Meta:
         model = CDSR
-        fields = "__all__"
+        fields = '__all__'
         widgets = {
-            'date_of_purchase': forms.DateInput(attrs={'type': 'date', 'class': 'form-control standard-size'}),
+            'date_of_purchase': forms.DateInput(attrs={'type': 'date'}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.instance and self.instance.date_of_purchase:
             self.fields['date_of_purchase'].initial = self.instance.date_of_purchase.strftime('%Y-%m-%d')
+        
+        # Get all unique register names from the database
+        register_names = CDSR.objects.values_list('cdsr_name', flat=True).distinct()
+        register_choices = [(name, name) for name in register_names if name]
+        
+        # Initialize cdsr_name field with choices
+        self.fields['cdsr_name'] = forms.ChoiceField(
+            choices=[('', 'Select Register')] + register_choices,
+            widget=forms.Select(attrs={'class': 'form-control'})
+        )

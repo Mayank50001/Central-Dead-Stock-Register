@@ -22,4 +22,5 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path('accounts/', include('accounts.urls', namespace='accounts')),  # Ensure namespace is included
     path('inventory/' , include('inventory.urls')),
+    path('users/' , include('admin_user_management.urls')),
 ]

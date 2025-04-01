@@ -52,6 +52,7 @@ def login_view(request):
                 # Update user's device information
                 user.last_ip_address = current_ip
                 user.last_login_device = timezone.now()
+                user.last_logout_device = None
                 user.save()
                 
                 # Login the user
@@ -77,6 +78,7 @@ def logout_view(request):
         user = request.user
         user.last_ip_address = None
         user.last_login_device = None
+        user.last_logout_device = timezone.now()
         user.save()
     
     logout(request)

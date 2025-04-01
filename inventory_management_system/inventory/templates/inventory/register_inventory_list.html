@@ -1,18 +1,18 @@
 {% extends "base.html" %}
 {% load custom_filters %}
-
 {% block content %}
 <div class="container-fluid py-4">
     <!-- Header Section -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <a href="{% url 'inventory:admin_dashboard' %}" class="h3 text-decoration-none mb-0">Inventory
-                Management</a>
-            <p class="text-muted">Manage and track your inventory items</p>
+            <a href="{% url 'inventory:manage_stock_by_register' %}" class="h3 text-decoration-none mb-0">
+                <i class="fas fa-arrow-left me-2"></i>Register: {{ register_name }}
+            </a>
+            <p class="text-muted">View and manage items in this register</p>
         </div>
         <div>
-            <a href="{% url 'inventory:add_item' %}" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Add New Item
+            <a href="{% url 'inventory:add_register_item' register_name %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Add New Item
             </a>
         </div>
     </div>
@@ -103,7 +103,7 @@
                                         <i
                                             class="fas fa-sort-{% if order == 'asc' %}up{% else %}down{% endif %} ms-1"></i>
                                 {% endif %}
-                                    <
+                                    </a>
                         </th>
                         {% endfor %}
                                 <th class="text-center py-3">Actions</th>
@@ -117,12 +117,12 @@
                         {% endfor %}
                                 <td class="text-center">
                                     <div class="btn-group">
-                                        <a href="{% url 'inventory:edit_item' item.cdsr_id %}"
+                                        <a href="{% url 'inventory:edit_register_item' item.cdsr_name item.cdsr_id %}"
                                             class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip"
                                             title="Edit Item">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        <a href="{% url 'inventory:delete_item' item.cdsr_id %}"
+                                        <a href="{% url 'inventory:delete_register_item' item.cdsr_name item.cdsr_id  %}"
                                             class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip"
                                             title="Delete Item">
                                             <i class="fas fa-trash"></i>
@@ -461,4 +461,4 @@
             });
         });
 </script>
-{% endblock %}
+{% endblock %} 
