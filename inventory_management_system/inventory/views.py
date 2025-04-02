@@ -16,6 +16,7 @@ from django.utils.text import slugify
 from datetime import datetime
 from django.contrib.auth import get_user_model
 from urllib.parse import unquote
+from django.db.models.functions import ExtractMonth
 
 def redirect_with_no_cache(url_name, *args, **kwargs):
     """
@@ -37,130 +38,114 @@ def redirect_with_no_cache(url_name, *args, **kwargs):
 @login_required
 @role_required(allowed_roles=['admin'])
 def admin_dashboard(request):
-    # Basic Stats
-    total_items = CDSR.objects.count()
-    active_items = CDSR.objects.filter(writeoff_status__isnull=True).count()
-    total_allocations = DDSR.objects.count()
+    # Basic Stats - Using database aggregation
+    stats = CDSR.objects.aggregate(
+        total_items=Count('cdsr_id'),
+        active_items=Count('cdsr_id', filter=Q(writeoff_status__isnull=True)),
+        total_value=Sum('total_cost'),
+        yearly_value=Sum('total_cost', filter=Q(purchase_year=str(now().year)))
+    )
     
-    # Get unique departments and count active ones
-    departments = DDSR.objects.values_list('department', flat=True).distinct()
-    total_departments = len(departments)
-    active_departments = DDSR.objects.values('department').distinct().count()
+    # Department stats using database aggregation
+    department_stats = DDSR.objects.aggregate(
+        total_allocations=Count('ddsr_id'),
+        total_departments=Count('department', distinct=True),
+        active_departments=Count('department', distinct=True)
+    )
     
-    # Calculate total value
-    total_value = CDSR.objects.aggregate(total=Sum('total_cost'))['total'] or 0
-    current_year = now().year
-    yearly_value = CDSR.objects.filter(purchase_year=str(current_year)).aggregate(total=Sum('total_cost'))['total'] or 0
-    
-    # Monthly allocations (including reallocations and deallocations)
+    # Current month allocations
     current_month = now().month
     monthly_allocations = DDSR.objects.filter(date_of_receive__month=current_month).count()
     
-    # Department Distribution Data for Pie Chart
-    department_data = []
-    department_labels = []
-    for dept in departments:
-        count = DDSR.objects.filter(department=dept).count()
-        if count > 0:
-            department_data.append(count)
-            department_labels.append(dept)
+    # Department Distribution Data - Using database aggregation
+    department_data = list(DDSR.objects.values('department')
+        .annotate(count=Count('ddsr_id'))
+        .values_list('department', 'count')
+        .order_by('-count'))
     
-    # Monthly Allocation Data for Bar Chart
-    months = []
+    # Ensure we have at least 5 departments for the pie chart colors
+    department_labels = [dept for dept, _ in department_data]
+    department_data = [count for _, count in department_data]
+    
+    # Monthly Allocation Data - Using database aggregation
+    # Get the last 7 months in chronological order
+    last_7_months = []
     monthly_data = []
-    for i in range(6, -1, -1):  # Last 6 months
-        month = (now() - timedelta(days=i*30)).strftime('%B')
-        month_num = (now() - timedelta(days=i*30)).month
-        months.append(month)
-        count = DDSR.objects.filter(date_of_receive__month=month_num).count()
-        monthly_data.append(count)
     
-    # Recent Stock Actions
-    recent_actions = []
-    
-    # Get all DDSR entries ordered by date
-    all_ddsr_entries = DDSR.objects.order_by('date_of_receive')
-    
-    # Track the latest state for each CDSR-Department combination
-    allocation_state = {}
-    
-    # Process all entries chronologically to track changes
-    for ddsr in all_ddsr_entries:
-        key = f"{ddsr.cdsr_table_id}_{ddsr.department}"
+    for i in range(6, -1, -1):
+        date = now() - timedelta(days=i*30)
+        month_name = date.strftime('%B')
+        month_num = date.month
+        year = date.year
         
-        if key not in allocation_state:
-            # First allocation for this combination
-            action = {
-                'date': ddsr.date_of_receive.strftime('%Y-%m-%d'),
-                'item_name': ddsr.product_description,
-                'action_type': 'allocation',
-                'department': ddsr.department,
-                'quantity': ddsr.accepted_product_quantity,
-                'status': 'completed'
-            }
-            recent_actions.append(action)
-            allocation_state[key] = ddsr.accepted_product_quantity
-        else:
-            # Compare with previous state
-            prev_quantity = allocation_state[key]
-            current_quantity = ddsr.accepted_product_quantity
-            
-            if current_quantity > prev_quantity:
-                action_type = 'reallocation (increased)'
-            elif current_quantity < prev_quantity:
+        print(date)
+        print(year)
+        print(month_num)
+        print(month_name)
+        # Get count for this month
+        count = DDSR.objects.filter(
+            date_of_receive__year=year,
+            date_of_receive__month=month_num
+        ).count()
+
+        print(count)
+        
+        last_7_months.append(month_name)
+        monthly_data.append(int(count))  # Ensure count is an integer
+    
+    # Recent Stock Actions - Optimized query with proper action types
+    recent_actions = []
+    latest_ddsr_entries = DDSR.objects.order_by('-date_of_receive')[:10]
+    
+    for ddsr in latest_ddsr_entries:
+        # Determine action type based on the data
+        action_type = 'allocation'  # Default to allocation
+        
+        # Check if this is a reallocation or deallocation by looking at previous state
+        prev_entry = DDSR.objects.filter(
+            cdsr_table_id=ddsr.cdsr_table_id,
+            department=ddsr.department,
+            date_of_receive__lt=ddsr.date_of_receive
+        ).order_by('-date_of_receive').first()
+        
+        if prev_entry:
+            if ddsr.accepted_product_quantity < prev_entry.accepted_product_quantity:
                 action_type = 'deallocation'
-            else:
+            elif ddsr.accepted_product_quantity > prev_entry.accepted_product_quantity:
                 action_type = 'reallocation'
-                
-            action = {
-                'date': ddsr.date_of_receive.strftime('%Y-%m-%d'),
-                'item_name': ddsr.product_description,
-                'action_type': action_type,
-                'department': ddsr.department,
-                'quantity': current_quantity,
-                'status': 'completed'
-            }
-            recent_actions.append(action)
-            allocation_state[key] = current_quantity
-    
-    # Add complete deallocations (where entries were deleted)
-    deleted_allocations = []
-    for key, last_quantity in allocation_state.items():
-        cdsr_id, department = key.split('_')
-        # Check if this allocation still exists
-        if not DDSR.objects.filter(cdsr_table_id=cdsr_id, department=department).exists():
-            # This was a complete deallocation
-            action = {
-                'date': now().strftime('%Y-%m-%d'),  # Use current date as we don't have the exact deletion date
-                'item_name': CDSR.objects.get(cdsr_id=cdsr_id).product_description,
-                'action_type': 'complete deallocation',
-                'department': department,
-                'quantity': 0,
-                'status': 'completed'
-            }
-            deleted_allocations.append(action)
-    
-    # Add deleted allocations to recent actions
-    recent_actions.extend(deleted_allocations)
-    
-    # Sort all actions by date (newest first) and keep only the 10 most recent
-    recent_actions.sort(key=lambda x: x['date'], reverse=True)
-    recent_actions = recent_actions[:10]
+        
+        action = {
+            'date': ddsr.date_of_receive.strftime('%Y-%m-%d'),
+            'item_name': ddsr.product_description,
+            'action_type': action_type,
+            'department': ddsr.department,
+            'quantity': ddsr.accepted_product_quantity,
+            'status': 'completed'
+        }
+        recent_actions.append(action)
     
     context = {
-        'total_items': total_items,
-        'active_items': active_items,
-        'total_allocations': total_allocations,
+        'total_items': stats['total_items'],
+        'active_items': stats['active_items'],
+        'total_allocations': department_stats['total_allocations'],
         'monthly_allocations': monthly_allocations,
-        'total_departments': total_departments,
-        'active_departments': active_departments,
-        'total_value': "{:,.2f}".format(total_value),
-        'yearly_value': "{:,.2f}".format(yearly_value),
+        'total_departments': department_stats['total_departments'],
+        'active_departments': department_stats['active_departments'],
+        'total_value': "{:,.2f}".format(stats['total_value'] or 0),
+        'yearly_value': "{:,.2f}".format(stats['yearly_value'] or 0),
         'department_labels': department_labels,
         'department_data': department_data,
-        'monthly_labels': months,
+        'monthly_labels': last_7_months,
         'monthly_data': monthly_data,
         'recent_actions': recent_actions
+    }
+    
+    # Add debug information to context
+    context['debug'] = {
+        'monthly_labels': last_7_months,
+        'monthly_data': monthly_data,
+        'department_labels': department_labels,
+        'department_data': department_data
     }
     
     return render(request, "inventory/admin_dashboard.html", context)

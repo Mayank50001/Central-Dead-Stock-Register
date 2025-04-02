@@ -48,3 +48,11 @@ def dict_key(obj, key):
 def split(value, key):
     """Split string using the provided key (e.g., comma)"""
     return value.split(key)
+
+@register.filter
+def sum_list(value):
+    """Calculate the sum of a list of numbers"""
+    try:
+        return sum(float(x) for x in value)
+    except (ValueError, TypeError):
+        return 0

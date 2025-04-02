@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{% load static %}
+{% load custom_filters %}
 
 {% block content %}
 <div class="container-fluid d-flex">
@@ -130,7 +132,14 @@
                             <h5 class="card-title mb-0">Stock Distribution by Department</h5>
                         </div>
                         <div class="card-body">
-                            <canvas id="departmentPieChart"></canvas>
+                            {% if department_data|length > 0 %}
+                                <canvas id="departmentPieChart"></canvas>
+                            {% else %}
+                                <div class="text-center py-5">
+                                    <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted">No department allocation data available</p>
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -140,7 +149,14 @@
                             <h5 class="card-title mb-0">Monthly Allocations</h5>
                         </div>
                         <div class="card-body">
-                            <canvas id="monthlyBarChart"></canvas>
+                            {% if monthly_data|length > 0 and monthly_data|sum_list > 0 %}
+                                <canvas id="monthlyBarChart"></canvas>
+                            {% else %}
+                                <div class="text-center py-5">
+                                    <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted">No allocation data available for the last 7 months</p>
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -311,6 +327,7 @@
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    {% if department_data|length > 0 %}
     // Department Distribution Pie Chart
     const departmentCtx = document.getElementById('departmentPieChart').getContext('2d');
     new Chart(departmentCtx, {
@@ -338,7 +355,9 @@
             }
         }
     });
+    {% endif %}
 
+    {% if monthly_data|length > 0 and monthly_data|sum_list > 0 %}
     // Monthly Allocations Bar Chart
     const monthlyCtx = document.getElementById('monthlyBarChart').getContext('2d');
     new Chart(monthlyCtx, {
@@ -358,10 +377,20 @@
             maintainAspectRatio: false,
             scales: {
                 y: {
-                    beginAtZero: true
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
                 }
             }
         }
     });
+    {% endif %}
+
+    // Debug information
+    console.log('Monthly Labels:', {{ monthly_labels|safe }});
+    console.log('Monthly Data:', {{ monthly_data|safe }});
+    console.log('Department Labels:', {{ department_labels|safe }});
+    console.log('Department Data:', {{ department_data|safe }});
 </script>
 {% endblock %}

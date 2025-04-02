@@ -3,7 +3,9 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.utils import timezone
 from django.urls import reverse
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
+from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required
 from .models import CustomUser
 from .forms import LoginForm
 
@@ -43,7 +45,7 @@ def login_view(request):
                 print(current_ip)
                 print(user.last_ip_address)
                 print(user.last_login_device)
-                
+                 
                 # Check if user is already logged in from another device
                 if user.last_ip_address and user.last_ip_address != current_ip:
                     messages.error(request, "This account is already logged in from another device.")
@@ -84,3 +86,18 @@ def logout_view(request):
     logout(request)
     messages.success(request, "Logged out successfully!")
     return redirect_with_no_cache("accounts:login")
+
+@require_POST
+@login_required
+def reset_last_ip(request):
+    """Reset the last_ip_address field for the current user"""
+    try:
+        user = request.user
+        user.last_ip_address = None
+        user.last_logout_device = timezone.now()
+        user.last_login_device = None
+        user.save()
+        return JsonResponse({'status': 'success'})
+        
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)

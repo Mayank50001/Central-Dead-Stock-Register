@@ -17,10 +17,15 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path , include
+from django.shortcuts import redirect
+
+def redirect_to_login(request):
+    return redirect('/accounts/login')
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path('accounts/', include('accounts.urls', namespace='accounts')),  # Ensure namespace is included
+    path('', redirect_to_login),
+    path('accounts/', include('accounts.urls')),  # Ensure namespace is included
     path('inventory/' , include('inventory.urls')),
     path('users/' , include('admin_user_management.urls')),
 ]
