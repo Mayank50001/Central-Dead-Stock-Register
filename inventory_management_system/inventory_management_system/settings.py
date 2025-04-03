@@ -26,8 +26,8 @@ SECRET_KEY = "django-insecure-i)&p)chc_3ash6zqxwt(&(@xv*v$q06tk+5ctg%mqht@8sqqai
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-
 ALLOWED_HOSTS = ['*']
+
 
 
 # Application definition
@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'accounts' , 
     'inventory',
     'register_management',
+    'stock_management',
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",

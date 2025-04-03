@@ -4,7 +4,7 @@
 <div class="container mt-4">
     <h2 class="text-center">Confirm Bulk Allocation</h2>
 
-    <form method="POST" action="{% url 'inventory:bulk_allocate' %}">
+    <form method="POST" action="{% url 'stock_management:bulk_allocate' %}">
         {% csrf_token %}
 
         <!-- Department Selection -->

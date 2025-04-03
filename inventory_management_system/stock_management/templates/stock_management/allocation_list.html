@@ -61,14 +61,14 @@
                         class="btn btn-outline-warning {% if allocated_filter == 'unallocated' %}active{% endif %}">
                         <i class="fas fa-times-circle"></i> Show Unallocated
                     </a>
-                    <a href="{% url 'inventory:cdsr_allocation_list' %}" class="btn btn-outline-secondary">
+                    <a href="{% url 'stock_management:cdsr_allocation_list' %}" class="btn btn-outline-secondary">
                         <i class="fas fa-list"></i> Show All
                     </a>
                 </div>
             </div>
 
             <!-- Table Section -->
-            <form method="POST" action="{% url 'inventory:bulk_allocate_confirm' %}">
+            <form method="POST" action="{% url 'stock_management:bulk_allocate_confirm' %}">
                 {% csrf_token %}
                 <div class="table-responsive">
                     <table class="table table-hover align-middle">
@@ -100,14 +100,14 @@
                                 <td>{{ item.allocated_departments|default:"Not Allocated" }}</td>
                                 <td class="text-center">
                                     <div class="btn-group">
-                                        <a href="{% url 'inventory:allocate_form' item.cdsr_id %}"
+                                        <a href="{% url 'stock_management:allocate_form' item.cdsr_id %}"
                                             class="btn btn-sm {% if item.is_fully_allocated %}btn-outline-warning{% else %}btn-outline-primary{% endif %}"
                                             data-bs-toggle="tooltip"
                                             title="{% if item.is_fully_allocated %}Reallocate{% else %}Allocate{% endif %}">
                                             <i class="fas {% if item.is_fully_allocated %}fa-exchange-alt{% else %}fa-plus{% endif %}"></i>
                                         </a>
                                         {% if item.has_allocations %}
-                                        <a href="{% url 'inventory:deallocate_form' item.cdsr_id %}" 
+                                        <a href="{% url 'stock_management:deallocate_form' item.cdsr_id %}" 
                                            class="btn btn-sm btn-outline-danger"
                                            data-bs-toggle="tooltip"
                                            title="Deallocate">
@@ -133,10 +133,10 @@
 
                 <!-- Bulk Actions -->
                 <div class="d-flex gap-2 mt-3">
-                    <button type="submit" class="btn btn-success" formaction="{% url 'inventory:bulk_allocate_confirm' %}">
+                    <button type="submit" class="btn btn-success" formaction="{% url 'stock_management:bulk_allocate_confirm' %}">
                         <i class="fas fa-plus-circle"></i> Allocate Selected
                     </button>
-                    <button type="submit" class="btn btn-danger" formaction="{% url 'inventory:bulk_deallocate_confirm' %}" id="bulkDeallocateBtn">
+                    <button type="submit" class="btn btn-danger" formaction="{% url 'stock_management:bulk_deallocate_confirm' %}" id="bulkDeallocateBtn">
                         <i class="fas fa-minus-circle"></i> Deallocate Selected
                     </button>
                 </div>

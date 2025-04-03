@@ -4,7 +4,7 @@
 <div class="container mt-4">
     <h2 class="text-center">Confirm Bulk Deallocation</h2>
 
-    <form method="POST" action="{% url 'inventory:bulk_deallocate' %}">
+    <form method="POST" action="{% url 'stock_management:bulk_deallocate' %}">
         {% csrf_token %}
 
         {% for item in items_with_allocations %}
@@ -54,7 +54,7 @@
         </div>
 
         <div class="d-flex justify-content-between">
-            <a href="{% url 'inventory:cdsr_allocation_list' %}" class="btn btn-secondary">Cancel</a>
+            <a href="{% url 'stock_management:cdsr_allocation_list' %}" class="btn btn-secondary">Cancel</a>
             <button type="submit" class="btn btn-danger" id="confirmDeallocateBtn">Confirm Deallocation</button>
         </div>
     </form>
