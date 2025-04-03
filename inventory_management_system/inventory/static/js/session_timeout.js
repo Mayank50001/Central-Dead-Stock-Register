@@ -11,7 +11,9 @@ function resetTimeout() {
 // Function to handle logout
 async function logout() {
     try {
-        // First, reset the last_ip_address
+        console.log("Attempting to reset IP before logout...");
+
+        // Reset last IP address before logging out
         const response = await fetch('/accounts/reset-last-ip/', {
             method: 'POST',
             headers: {
@@ -19,17 +21,20 @@ async function logout() {
                 'Content-Type': 'application/json',
             },
         });
-        
+
         if (!response.ok) {
-            console.error('Failed to reset last IP address');
+            console.error('Failed to reset last IP address:', response.statusText);
+        } else {
+            console.log("IP reset successful.");
         }
     } catch (error) {
         console.error('Error resetting last IP address:', error);
     } finally {
-        // Proceed with logout regardless of IP reset success
+        console.log("Proceeding to logout...");
         window.location.href = '/accounts/logout/';
     }
 }
+
 
 // Function to get CSRF token from cookies
 function getCookie(name) {
@@ -65,29 +70,10 @@ document.addEventListener('visibilitychange', function() {
 });
 
 // Handle beforeunload event (browser close/refresh)
-window.addEventListener('beforeunload', async function(e) {
-    // Clear the timeout
+// ✅ Fix: Use sendBeacon() for tab close / refresh
+window.addEventListener('beforeunload', function () {
     clearTimeout(timeout);
-    
-    // Call logout function
-    try {
-        // First, reset the last_ip_address
-        const response = await fetch('/accounts/reset-last-ip/', {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken'),
-                'Content-Type': 'application/json',
-            },
-            // Use keepalive to ensure the request completes even if the page is unloading
-            keepalive: true
-        });
-        
-        if (!response.ok) {
-            console.error('Failed to reset last IP address');
-        }
-    } catch (error) {
-        console.error('Error resetting last IP address:', error);
-    }
+    navigator.sendBeacon('/accounts/reset-last-ip/');
 });
 
 // Initialize the timeout when the page loads

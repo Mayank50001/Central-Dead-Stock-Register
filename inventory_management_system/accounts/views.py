@@ -93,11 +93,13 @@ def reset_last_ip(request):
     """Reset the last_ip_address field for the current user"""
     try:
         user = request.user
+        print(f"Resetting last IP for user: {user.email}")  # Debug log
         user.last_ip_address = None
         user.last_logout_device = timezone.now()
         user.last_login_device = None
         user.save()
+        print("Reset successful")  # Debug log
         return JsonResponse({'status': 'success'})
-        
     except Exception as e:
+        print(f"Error in reset_last_ip: {e}")  # Debug log
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
