@@ -28,4 +28,5 @@ urlpatterns = [
     path('accounts/', include('accounts.urls')),  # Ensure namespace is included
     path('inventory/' , include('inventory.urls')),
     path('users/' , include('admin_user_management.urls')),
+    path('register/' , include('register_management.urls')),
 ]

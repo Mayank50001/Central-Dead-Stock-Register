@@ -38,7 +38,7 @@
                             <td>₹{{ register.total_value }}</td>
                             <td class="text-center">
                                 <div class="btn-group">
-                                    <a href="{% url 'inventory:register_inventory_list' register.name %}" 
+                                    <a href="{% url 'register_management:register_inventory_list' register.name %}" 
                                        class="btn btn-sm btn-outline-primary" 
                                        data-bs-toggle="tooltip" 
                                        title="View Stock">
@@ -80,7 +80,7 @@
                 <h5 class="modal-title" id="addRegisterModalLabel">Add New Register</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="POST" action="{% url 'inventory:add_register' %}">
+            <form method="POST" action="{% url 'register_management:add_register' %}">
                 {% csrf_token %}
                 <div class="modal-body">
                     <div class="mb-3">
@@ -112,7 +112,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <form method="POST" action="{% url 'inventory:delete_register' register.name %}" class="d-inline">
+                <form method="POST" action="{% url 'register_management:delete_register' register.name %}" class="d-inline">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-danger">Delete Register</button>
                 </form>

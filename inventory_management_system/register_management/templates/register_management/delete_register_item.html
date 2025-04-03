@@ -52,7 +52,7 @@
                     <form method="post">
                         {% csrf_token %}
                         <div class="d-flex justify-content-between">
-                            <a href="{% url 'inventory:register_inventory_list' register_name=cdsr_item.cdsr_name %}" class="btn btn-secondary">Cancel</a>
+                            <a href="{% url 'register_management:register_inventory_list' register_name=cdsr_item.cdsr_name %}" class="btn btn-secondary">Cancel</a>
                             <button type="submit" class="btn btn-danger" {% if allocations %}disabled{% endif %}>
                                 Delete Item
                             </button>

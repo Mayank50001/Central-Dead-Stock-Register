@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'admin_user_management',
     'accounts' , 
     'inventory',
+    'register_management',
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -85,10 +86,10 @@ WSGI_APPLICATION = "inventory_management_system.wsgi.application"
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'u529802313_demo',
-        'USER': 'u529802313_nitin',
-        'PASSWORD': 'Nitin@225111',
-        'HOST': 'srv1339.hstgr.io',  # or '127.0.0.1'
+        'NAME': 'django_db',
+        'USER': 'django_user',
+        'PASSWORD': 'Er2-30652',
+        'HOST': '*',  # or '127.0.0.1'
         'PORT': '3306',
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
