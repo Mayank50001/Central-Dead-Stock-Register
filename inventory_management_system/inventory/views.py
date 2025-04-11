@@ -75,10 +75,7 @@ def admin_dashboard(request):
         month_num = date.month
         year = date.year
         
-        print(date)
-        print(year)
-        print(month_num)
-        print(month_name)
+        
         # Get count for this month
         count = DDSR.objects.filter(
             date_of_receive__year=year,

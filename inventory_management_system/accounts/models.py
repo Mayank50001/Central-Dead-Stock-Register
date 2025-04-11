@@ -30,6 +30,7 @@ class CustomUser(AbstractUser):
     last_ip_address = models.GenericIPAddressField(null=True, blank=True)  # To track the last IP address
     last_login_device = models.DateTimeField(null=True, blank=True)  # To track when the device was last used
     last_logout_device = models.DateTimeField(null=True, blank=True)  # To track when the device was last used
+    last_activity = models.DateTimeField(null=True, blank=True)  # To track when the user was last active
 
     objects = CustomUserManager()
 

@@ -2,12 +2,16 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.utils import timezone
+from datetime import timedelta
 from django.urls import reverse
 from django.http import HttpResponseRedirect, JsonResponse
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 from .models import CustomUser
 from .forms import LoginForm
+from django.views.decorators.csrf import csrf_exempt
+
+MAX_INACTIVE_TIME = timedelta(minutes=10)  # 5 minutes in seconds
 
 def get_client_ip(request):
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
@@ -38,6 +42,8 @@ def login_view(request):
             email = form.cleaned_data["email"]
             password = form.cleaned_data["password"]
             user = authenticate(request, email=email, password=password)
+
+            print(f"🔴 User: {user}")
             
             if user is not None:
                 # Get current device info
@@ -45,7 +51,16 @@ def login_view(request):
                 print(current_ip)
                 print(user.last_ip_address)
                 print(user.last_login_device)
-                 
+                print(user.last_activity)
+
+                last_seen = user.last_activity
+                if last_seen and timezone.now() - last_seen > MAX_INACTIVE_TIME:
+                    user.last_activity = None
+                    user.last_ip_address = None
+                    user.last_login_device = None
+                    user.last_logout_device = timezone.now()
+                    user.save()
+                    logout(request)
                 # Check if user is already logged in from another device
                 if user.last_ip_address and user.last_ip_address != current_ip:
                     messages.error(request, "This account is already logged in from another device.")
@@ -55,11 +70,11 @@ def login_view(request):
                 user.last_ip_address = current_ip
                 user.last_login_device = timezone.now()
                 user.last_logout_device = None
+                user.last_activity = timezone.now()
                 user.save()
                 
                 # Login the user
                 login(request, user)
-                messages.success(request, "Login successful!")
                 
                 # Redirect based on role
                 if user.role == "admin":
@@ -80,26 +95,10 @@ def logout_view(request):
         user = request.user
         user.last_ip_address = None
         user.last_login_device = None
+        user.last_activity = None
         user.last_logout_device = timezone.now()
         user.save()
     
     logout(request)
     messages.success(request, "Logged out successfully!")
     return redirect_with_no_cache("accounts:login")
-
-@require_POST
-@login_required
-def reset_last_ip(request):
-    """Reset the last_ip_address field for the current user"""
-    try:
-        user = request.user
-        print(f"Resetting last IP for user: {user.email}")  # Debug log
-        user.last_ip_address = None
-        user.last_logout_device = timezone.now()
-        user.last_login_device = None
-        user.save()
-        print("Reset successful")  # Debug log
-        return JsonResponse({'status': 'success'})
-    except Exception as e:
-        print(f"Error in reset_last_ip: {e}")  # Debug log
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)

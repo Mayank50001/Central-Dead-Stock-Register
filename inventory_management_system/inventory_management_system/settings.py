@@ -56,6 +56,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    'accounts.middleware.InactivityTimeoutMiddleware',
 ]
 
 ROOT_URLCONF = "inventory_management_system.urls"
@@ -157,9 +158,8 @@ USE_TZ = True
 USE_I18N = True
 USE_L10N = True
 
-# Session Settings
-SESSION_COOKIE_AGE = 1200  # 20 minutes in seconds
-SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 SESSION_SAVE_EVERY_REQUEST = True
 
 
