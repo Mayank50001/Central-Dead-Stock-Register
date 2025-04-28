@@ -203,9 +203,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (total > maxAllowed) {
             submitBtn.disabled = true;
+            submitBtn.innerText = 'Exceeds Limit';
+            if(!submitBtn.classList.contains('btn-danger')) {
+                submitBtn.classList.remove('btn-success');
+                submitBtn.classList.add('btn-danger');
+            }
             totalToAllocate.parentElement.classList.add('text-danger');
         } else {
             submitBtn.disabled = false;
+            submitBtn.innerText = 'Allocate';
+            if(submitBtn.classList.contains('btn-danger')) {
+                submitBtn.classList.remove('btn-danger');
+                submitBtn.classList.add('btn-success');
+            }
             totalToAllocate.parentElement.classList.remove('text-danger');
         }
     }

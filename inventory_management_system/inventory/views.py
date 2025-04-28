@@ -13,6 +13,7 @@ import csv
 from django.http import HttpResponse, HttpResponseRedirect
 from django.utils.text import slugify
 from datetime import datetime
+from babel.numbers import format_decimal
 
 
 def redirect_with_no_cache(url_name, *args, **kwargs):
@@ -125,7 +126,7 @@ def admin_dashboard(request):
         'monthly_allocations': monthly_allocations,
         'total_departments': department_stats['total_departments'],
         'active_departments': department_stats['active_departments'],
-        'total_value': "{:,.2f}".format(stats['total_value'] or 0),
+        'total_value': format_decimal(stats['total_value'] or 0, locale='en_IN'),
         'yearly_value': "{:,.2f}".format(stats['yearly_value'] or 0),
         'department_labels': department_labels,
         'department_data': department_data,
@@ -205,7 +206,7 @@ def department_dashboard(request):
         'department_name': department_name,
         'total_items': total_items,
         'total_quantity': total_quantity,
-        'total_value': "{:,.2f}".format(total_value),
+        'total_value': format_decimal(total_value , locale='en_IN'),
         'recent_allocations': recent_allocations,
         'new_items_percent': new_items_percent,
         'quantity_percent': quantity_percent,

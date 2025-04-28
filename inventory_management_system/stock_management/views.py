@@ -195,7 +195,7 @@ def bulk_allocate_confirm(request):
             return redirect("stock_management:cdsr_allocation_list")
 
         selected_items = CDSR.objects.filter(cdsr_id__in=selected_ids)
-        return render(request, "inventory/bulk_allocate_confirm.html", {"selected_items": selected_items})
+        return render(request, "stock_managemen/bulk_allocate_confirm.html", {"selected_items": selected_items})
 
     return redirect("stock_management:cdsr_allocation_list")
 
