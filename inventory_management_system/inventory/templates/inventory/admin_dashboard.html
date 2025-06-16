@@ -4,37 +4,50 @@
 
 {% block content %}
 <div class="container-fluid d-flex">
-    <!-- Sidebar (Static) -->
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    
+    <!-- Sidebar -->
     <nav id="sidebar" class="sidebar">
         <div class="sidebar-content">
+            <!-- Close button for mobile -->
+            <button class="sidebar-close d-lg-none" id="sidebarClose">
+                <i class="fas fa-times"></i>
+            </button>
+            
             <!-- Welcome Message in Sidebar -->
-            <h4 class="text-center mt-3 text-light">CDSR Admin Dashboard</h4>
+            <h4 class="text-center mt-3 text-light sidebar-title">CDSR Admin Dashboard</h4>
             <hr class="bg-light">
 
             <ul class="nav flex-column mt-3">
                 <li class="nav-item">
                     <a href="{% url 'admin_user_management:add_department_user' %}" class="nav-link">
-                        <i class="fas fa-user-plus me-2"></i> Add Department User
+                        <i class="fas fa-user-plus me-2"></i> 
+                        <span class="nav-text">Add Department User</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a href="{% url 'admin_user_management:manage_users' %}" class="nav-link">
-                        <i class="fas fa-users me-2"></i> Manage Users
+                        <i class="fas fa-users me-2"></i> 
+                        <span class="nav-text">Manage Users</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a href="{% url 'inventory:inventory_list' %}" class="nav-link">
-                        <i class="fas fa-boxes me-2"></i> Manage Stock
+                        <i class="fas fa-boxes me-2"></i> 
+                        <span class="nav-text">Manage Stock</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a href="{% url 'register_management:manage_stock_by_register' %}" class="nav-link">
-                        <i class="fas fa-book me-2"></i> Manage Stock by Register
+                        <i class="fas fa-book me-2"></i> 
+                        <span class="nav-text">Manage Stock by Register</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a href="{% url 'stock_management:cdsr_allocation_list' %}" class="nav-link">
-                        <i class="fas fa-boxes me-2"></i> Allocate Stock
+                        <i class="fas fa-boxes me-2"></i> 
+                        <span class="nav-text">Allocate Stock</span>
                     </a>
                 </li>
             </ul>
@@ -46,8 +59,15 @@
         <!-- Navbar -->
         <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow">
             <div class="container-fluid d-flex justify-content-between align-items-center">
-                <span class="navbar-brand fw-bold mx-auto" style="
-                    font-size: 1.8rem;
+                <!-- Hamburger Menu Button -->
+                <button class="hamburger-btn d-lg-none" id="sidebarToggle">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </button>
+                
+                <span class="navbar-brand fw-bold brand-text" style="
+                    font-size: clamp(1.2rem, 4vw, 1.8rem);
                     background: linear-gradient(to right, #1DB954, #17A2B8);
                     -webkit-background-clip: text;
                     -webkit-text-fill-color: transparent;
@@ -58,32 +78,29 @@
                 </span>
                 <div>
                     {% if user.is_authenticated %}
-                        <a href="{% url 'accounts:logout' %}" class="btn btn-danger">Logout</a>
+                        <a href="{% url 'accounts:logout' %}" class="btn btn-danger btn-responsive">Logout</a>
                     {% else %}
-                        <a href="{% url 'accounts:login' %}" class="btn btn-success">Login</a>
+                        <a href="{% url 'accounts:login' %}" class="btn btn-success btn-responsive">Login</a>
                     {% endif %}
                 </div>
             </div>
         </nav>
 
         <!-- Dashboard Content -->
-        <div class="container-fluid mt-4">
+        <div class="container-fluid mt-4 dashboard-content">
             <!-- Stats Cards Row -->
-            <div class="row mb-4">
-                <div class="col-md-3">
+            <div class="row mb-4 g-3">
+                <div class="col-lg-3 col-md-6 col-12">
                     <div class="stat-card bg-gradient-primary">
                         <div class="stat-card-body">
                             <i class="fas fa-boxes stat-icon"></i>
                             <h5>Total Items</h5>
                             <h2>{{ total_items }}</h2>
-                            <p class="trend">
-                                <i class="fas fa-check"></i>
-                                <span>Active Items: {{ active_items }}</span>
-                            </p>
+                            
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-lg-3 col-md-6 col-12">
                     <div class="stat-card bg-gradient-success">
                         <div class="stat-card-body">
                             <i class="fas fa-box-open stat-icon"></i>
@@ -96,7 +113,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-lg-3 col-md-6 col-12">
                     <div class="stat-card bg-gradient-warning">
                         <div class="stat-card-body">
                             <i class="fas fa-university stat-icon"></i>
@@ -109,31 +126,30 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-lg-3 col-md-6 col-12">
                     <div class="stat-card bg-gradient-info">
                         <div class="stat-card-body">
                             <i class="fas fa-rupee-sign stat-icon"></i>
                             <h5>Total Value</h5>
-                            <h2 style="font-size: 1.5rem; word-break: break-all;">₹{{ total_value }}</h2>
-                            <p class="trend">
-                                <i class="fas fa-calendar-alt"></i>
-                                <span>This Year: ₹{{ yearly_value }}</span>
-                            </p>
+                            <h2 class="value-text">₹{{ total_value }}</h2>
+                            
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Charts Row -->
-            <div class="row mb-4">
-                <div class="col-md-6">
-                    <div class="card">
+            <div class="row mb-4 g-4">
+                <div class="col-lg-6 col-12">
+                    <div class="card chart-card">
                         <div class="card-header">
                             <h5 class="card-title mb-0">Stock Distribution by Department</h5>
                         </div>
                         <div class="card-body">
                             {% if department_data|length > 0 %}
-                                <canvas id="departmentPieChart"></canvas>
+                                <div class="chart-container">
+                                    <canvas id="departmentPieChart"></canvas>
+                                </div>
                             {% else %}
                                 <div class="text-center py-5">
                                     <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
@@ -143,14 +159,16 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <div class="card">
+                <div class="col-lg-6 col-12">
+                    <div class="card chart-card">
                         <div class="card-header">
                             <h5 class="card-title mb-0">Monthly Allocations</h5>
                         </div>
                         <div class="card-body">
                             {% if monthly_data|length > 0 and monthly_data|sum_list > 0 %}
-                                <canvas id="monthlyBarChart"></canvas>
+                                <div class="chart-container">
+                                    <canvas id="monthlyBarChart"></canvas>
+                                </div>
                             {% else %}
                                 <div class="text-center py-5">
                                     <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
@@ -163,13 +181,13 @@
             </div>
 
             <!-- Recent Activity Table -->
-            <div class="card">
+            <div class="card table-card">
                 <div class="card-header">
                     <h5 class="card-title mb-0">Recent Stock Actions</h5>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-hover">
+                        <table class="table table-hover responsive-table">
                             <thead>
                                 <tr>
                                     <th>Date</th>
@@ -183,16 +201,16 @@
                             <tbody>
                                 {% for action in recent_actions %}
                                 <tr>
-                                    <td>{{ action.date }}</td>
-                                    <td>{{ action.item_name }}</td>
-                                    <td>
+                                    <td data-label="Date">{{ action.date }}</td>
+                                    <td data-label="Item">{{ action.item_name }}</td>
+                                    <td data-label="Action">
                                         <span class="badge {% if action.action_type == 'allocation' %}bg-success{% elif action.action_type == 'deallocation' %}bg-danger{% else %}bg-warning{% endif %}">
                                             {{ action.action_type|title }}
                                         </span>
                                     </td>
-                                    <td>{{ action.department }}</td>
-                                    <td>{{ action.quantity }}</td>
-                                    <td>
+                                    <td data-label="Department">{{ action.department }}</td>
+                                    <td data-label="Quantity">{{ action.quantity }}</td>
+                                    <td data-label="Status">
                                         <span class="badge {% if action.status == 'completed' %}bg-success{% else %}bg-warning{% endif %}">
                                             {{ action.status|title }}
                                         </span>
@@ -208,9 +226,14 @@
     </div>
 </div>
 
-<!-- CSS for Sidebar -->
+<!-- CSS for Responsive Design -->
 <style>
-    /* Sidebar (Static) */
+    /* Base Styles */
+    body {
+        overflow-x: hidden;
+    }
+
+    /* Sidebar Styles */
     .sidebar {
         position: fixed;
         left: 0;
@@ -221,28 +244,135 @@
         color: white;
         padding-top: 20px;
         z-index: 1000;
+        transition: transform 0.3s ease;
     }
 
     .sidebar-content {
         padding: 20px;
+        height: 100%;
+        overflow-y: auto;
+    }
+
+    .sidebar-close {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1.5rem;
+        cursor: pointer;
+        z-index: 1001;
+    }
+
+    .sidebar-title {
+        font-size: clamp(1rem, 3vw, 1.25rem);
+        line-height: 1.2;
+        word-wrap: break-word;
     }
 
     .sidebar .nav-link {
         color: white;
         padding: 12px;
-        display: block;
-        font-size: 18px;
+        display: flex;
+        align-items: center;
+        font-size: 16px;
         text-decoration: none;
         transition: all 0.3s ease;
+        border-radius: 5px;
+        margin-bottom: 5px;
     }
 
     .sidebar .nav-link:hover {
         background: #1DB954;
-        border-radius: 5px;
-        transform: translateX(10px);
+        transform: translateX(5px);
     }
 
-    /* Stat Cards */
+    .sidebar .nav-link i {
+        min-width: 20px;
+        text-align: center;
+    }
+
+    /* Sidebar Overlay for Mobile */
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+        display: none;
+    }
+
+    /* Hamburger Menu */
+    .hamburger-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 8px;
+        margin-right: 15px;
+        flex-direction: column;
+        justify-content: space-around;
+        width: 30px;
+        height: 30px;
+        display: flex;
+    }
+
+    .hamburger-line {
+        width: 100%;
+        height: 3px;
+        background-color: white;
+        transition: all 0.3s ease;
+        border-radius: 2px;
+    }
+
+    .hamburger-btn.active .hamburger-line:nth-child(1) {
+        transform: rotate(45deg) translate(6px, 6px);
+    }
+
+    .hamburger-btn.active .hamburger-line:nth-child(2) {
+        opacity: 0;
+    }
+
+    .hamburger-btn.active .hamburger-line:nth-child(3) {
+        transform: rotate(-45deg) translate(6px, -6px);
+    }
+
+    /* Main Content */
+    .main-content {
+        margin-left: 250px;
+        width: calc(100% - 250px);
+        transition: margin-left 0.3s ease;
+        min-height: 100vh;
+    }
+
+    /* Navbar Responsive */
+    .navbar {
+        width: 100%;
+        padding: 10px 15px;
+        background-color: #343a40 !important;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .brand-text {
+        flex: 1;
+        text-align: center;
+        margin: 0 15px;
+    }
+
+    .btn-responsive {
+        padding: 8px 16px;
+        font-size: 14px;
+        white-space: nowrap;
+    }
+
+    /* Dashboard Content */
+    .dashboard-content {
+        padding: 0 15px;
+    }
+
+    /* Stat Cards Responsive */
     .stat-card {
         border-radius: 15px;
         padding: 20px;
@@ -250,6 +380,7 @@
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         transition: transform 0.3s ease;
         height: 100%;
+        min-height: 150px;
     }
 
     .stat-card:hover {
@@ -260,26 +391,60 @@
         height: 100%;
         display: flex;
         flex-direction: column;
+        justify-content: space-between;
     }
 
     .stat-card h2 {
         margin: 10px 0;
-        font-size: 2rem;
+        font-size: clamp(1.5rem, 4vw, 2rem);
+        word-break: break-word;
     }
 
     .stat-card h5 {
         margin-bottom: 0;
+        font-size: clamp(0.9rem, 3vw, 1.1rem);
+    }
+
+    .value-text {
+        font-size: clamp(1.2rem, 3vw, 1.5rem) !important;
+        word-break: break-all;
     }
 
     .stat-icon {
-        font-size: 2rem;
+        font-size: clamp(1.5rem, 4vw, 2rem);
         margin-bottom: 15px;
     }
 
     .trend {
-        font-size: 0.8rem;
-        margin-top: 10px;
+        font-size: clamp(0.7rem, 2vw, 0.8rem);
+        margin-top: auto;
         margin-bottom: 0;
+    }
+
+    /* Chart Cards */
+    .chart-card {
+        height: 400px;
+    }
+
+    .chart-container {
+        position: relative;
+        height: 300px;
+        width: 100%;
+    }
+
+    /* Table Responsive */
+    .table-card {
+        margin-bottom: 30px;
+    }
+
+    .responsive-table {
+        margin-bottom: 0;
+    }
+
+    .badge {
+        padding: 6px 10px;
+        border-radius: 15px;
+        font-size: 0.75rem;
     }
 
     /* Gradient Backgrounds */
@@ -299,34 +464,254 @@
         background: linear-gradient(45deg, #f6c23e, #dda20a);
     }
 
-    .table {
-        margin-bottom: 0;
+    /* Mobile Styles */
+    @media (max-width: 991.98px) {
+        .sidebar {
+            transform: translateX(-100%);
+        }
+
+        .sidebar.show {
+            transform: translateX(0);
+        }
+
+        .sidebar-overlay.show {
+            display: block;
+        }
+
+        .main-content {
+            margin-left: 0;
+            width: 100%;
+        }
+
+        .navbar .container-fluid {
+            padding: 0 10px;
+        }
+
+        .brand-text {
+            font-size: clamp(1rem, 4vw, 1.4rem) !important;
+            text-align: left;
+            margin: 0 10px;
+        }
+
+        .btn-responsive {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .dashboard-content {
+            padding: 0 10px;
+        }
+
+        .stat-card {
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .chart-card {
+            height: auto;
+            min-height: 350px;
+        }
+
+        .chart-container {
+            height: 250px;
+        }
     }
 
-    .badge {
-        padding: 8px 12px;
-        border-radius: 20px;
+    /* Tablet Styles */
+    @media (max-width: 768px) {
+        .responsive-table {
+            border: none;
+        }
+
+        .responsive-table thead {
+            display: none;
+        }
+
+        .responsive-table tbody tr {
+            display: block;
+            border: 1px solid #dee2e6;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            padding: 10px;
+            background: #f8f9fa;
+        }
+
+        .responsive-table tbody td {
+            display: block;
+            text-align: right;
+            border: none;
+            padding: 8px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .responsive-table tbody td:last-child {
+            border-bottom: none;
+        }
+
+        .responsive-table tbody td:before {
+            content: attr(data-label) ": ";
+            float: left;
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .badge {
+            display: inline-block;
+            margin-top: 2px;
+        }
     }
 
-    /* Main Content */
-    .main-content {
-        margin-left: 250px;
-        width: calc(100% - 250px);
-        transition: margin-left 0.4s ease-in-out;
+    /* Small Mobile Styles */
+    @media (max-width: 576px) {
+        .navbar {
+            padding: 8px 10px;
+        }
+
+        .stat-card {
+            padding: 12px;
+            min-height: 130px;
+        }
+
+        .stat-card h2 {
+            font-size: 1.4rem;
+        }
+
+        .stat-icon {
+            font-size: 1.3rem;
+        }
+
+        .chart-card {
+            min-height: 300px;
+        }
+
+        .chart-container {
+            height: 200px;
+        }
+
+        .sidebar-title {
+            font-size: 0.9rem;
+        }
+
+        .sidebar .nav-link {
+            font-size: 14px;
+            padding: 10px;
+        }
     }
 
-    /* Navbar */
-    .navbar {
-        width: 100%;
-        padding: 10px;
-        background-color: #f8f9fa;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    /* Extra Small Devices */
+    @media (max-width: 480px) {
+        .brand-text {
+            font-size: 1rem !important;
+        }
+
+        .btn-responsive {
+            padding: 4px 8px;
+            font-size: 11px;
+        }
+
+        .stat-card h2 {
+            font-size: 1.2rem;
+        }
+
+        .value-text {
+            font-size: 1rem !important;
+        }
+    }
+
+    /* Sidebar Animation Classes */
+    .sidebar-enter {
+        transform: translateX(-100%);
+    }
+
+    .sidebar-enter-active {
+        transform: translateX(0);
+        transition: transform 0.3s ease;
+    }
+
+    .sidebar-exit {
+        transform: translateX(0);
+    }
+
+    .sidebar-exit-active {
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+    }
+
+    /* Print Styles */
+    @media print {
+        .sidebar,
+        .navbar,
+        .hamburger-btn {
+            display: none !important;
+        }
+
+        .main-content {
+            margin-left: 0 !important;
+            width: 100% !important;
+        }
+
+        .stat-card {
+            page-break-inside: avoid;
+        }
     }
 </style>
 
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- JavaScript for Responsive Functionality -->
 <script>
+    // Sidebar Toggle Functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebarClose = document.getElementById('sidebarClose');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        // Toggle sidebar on hamburger click
+        sidebarToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('show');
+            sidebarOverlay.classList.toggle('show');
+            this.classList.toggle('active');
+        });
+
+        // Close sidebar on close button click
+        sidebarClose.addEventListener('click', function() {
+            sidebar.classList.remove('show');
+            sidebarOverlay.classList.remove('show');
+            sidebarToggle.classList.remove('active');
+        });
+
+        // Close sidebar on overlay click
+        sidebarOverlay.addEventListener('click', function() {
+            sidebar.classList.remove('show');
+            sidebarOverlay.classList.remove('show');
+            sidebarToggle.classList.remove('active');
+        });
+
+        // Close sidebar on window resize if desktop
+        window.addEventListener('resize', function() {
+            if (window.innerWidth >= 992) {
+                sidebar.classList.remove('show');
+                sidebarOverlay.classList.remove('show');
+                sidebarToggle.classList.remove('active');
+            }
+        });
+
+        // Close sidebar when clicking nav links on mobile
+        const navLinks = document.querySelectorAll('.sidebar .nav-link');
+        navLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                if (window.innerWidth < 992) {
+                    sidebar.classList.remove('show');
+                    sidebarOverlay.classList.remove('show');
+                    sidebarToggle.classList.remove('active');
+                }
+            });
+        });
+    });
+
+    // Chart Initialization
     {% if department_data|length > 0 %}
     // Department Distribution Pie Chart
     const departmentCtx = document.getElementById('departmentPieChart').getContext('2d');
@@ -341,7 +726,10 @@
                     '#36A2EB',
                     '#FFCE56',
                     '#4BC0C0',
-                    '#9966FF'
+                    '#9966FF',
+                    '#FF9F40',
+                    '#FF6384',
+                    '#C9CBCF'
                 ]
             }]
         },
@@ -350,7 +738,13 @@
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    position: 'right'
+                    position: window.innerWidth < 768 ? 'bottom' : 'right',
+                    labels: {
+                        boxWidth: 12,
+                        font: {
+                            size: window.innerWidth < 768 ? 10 : 12
+                        }
+                    }
                 }
             }
         }
@@ -379,13 +773,42 @@
                 y: {
                     beginAtZero: true,
                     ticks: {
-                        stepSize: 1
+                        stepSize: 1,
+                        font: {
+                            size: window.innerWidth < 768 ? 10 : 12
+                        }
+                    }
+                },
+                x: {
+                    ticks: {
+                        font: {
+                            size: window.innerWidth < 768 ? 10 : 12
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    labels: {
+                        font: {
+                            size: window.innerWidth < 768 ? 10 : 12
+                        }
                     }
                 }
             }
         }
     });
     {% endif %}
+
+    // Responsive chart legend update on window resize
+    window.addEventListener('resize', function() {
+        Chart.helpers.each(Chart.instances, function(instance) {
+            if (instance.config.type === 'pie') {
+                instance.options.plugins.legend.position = window.innerWidth < 768 ? 'bottom' : 'right';
+                instance.update();
+            }
+        });
+    });
 
     // Debug information
     console.log('Monthly Labels:', {{ monthly_labels|safe }});

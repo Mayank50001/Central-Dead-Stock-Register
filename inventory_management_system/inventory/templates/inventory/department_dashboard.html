@@ -2,50 +2,47 @@
 
 {% block content %}
 <div class="container-fluid d-flex">
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    
     <!-- Sidebar -->
-    <!-- <nav id="sidebar" class="sidebar">
-        <button class="btn btn-outline-light d-md-none mb-3" onclick="toggleSidebar()">☰</button>
-        <div class="sidebar-content">
-            <h4 class="text-center mt-3 text-light">Welcome to Department Dashboard</h4>
-            <hr class="bg-light">
-            <ul class="nav flex-column mt-3">
-                <li class="nav-item">
-                    <a href="#" class="nav-link">
-                        <i class="fas fa-box-open me-2"></i> View Allocated Stock
-                    </a>
-                </li>
-                
-                <li class="nav-item">
-                    <a href="{% url 'inventory:department_inventory_list' %}" class="nav-link">
-                        <i class="fas fa-box-open me-2"></i> View Stock
-                    </a>
-                </li>
-            </ul>
-        </div>
-    </nav> -->
     <nav id="sidebar" class="sidebar">
         <div class="sidebar-content">
+            <!-- Close button for mobile -->
+            <button class="sidebar-close d-lg-none" id="sidebarClose">
+                <i class="fas fa-times"></i>
+            </button>
+            
             <div class="department-info text-center mb-4">
                 <i class="fas fa-university department-icon"></i>
-                <h4 class="text-light mt-3">{{ department_name }}</h4>
+                <h4 class="text-light mt-3 department-title">{{ department_name }}</h4>
             </div>
             <hr class="bg-light">
             <ul class="nav flex-column mt-3">
                 <li class="nav-item">
                     <a href="{% url 'inventory:department_inventory_list' %}" class="nav-link">
-                        <i class="fas fa-box-open me-2"></i> View Stock
+                        <i class="fas fa-box-open me-2"></i> 
+                        <span class="nav-text">View Stock</span>
                     </a>
                 </li>
             </ul>
         </div>
     </nav>
 
+    <!-- Main Content -->
     <div class="main-content flex-grow-1">
         <!-- Navbar -->
         <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow">
             <div class="container-fluid d-flex justify-content-between align-items-center">
-                <span class="navbar-brand fw-bold mx-auto" style="
-                    font-size: 1.8rem;
+                <!-- Hamburger Menu Button -->
+                <button class="hamburger-btn d-lg-none" id="sidebarToggle">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </button>
+                
+                <span class="navbar-brand fw-bold brand-text" style="
+                    font-size: clamp(1.2rem, 4vw, 1.8rem);
                     background: linear-gradient(to right, #1DB954, #17A2B8);
                     -webkit-background-clip: text;
                     -webkit-text-fill-color: transparent;
@@ -56,21 +53,19 @@
                 </span>
                 <div>
                     {% if user.is_authenticated %}
-                        <button onclick="logout()" class="btn btn-danger">Logout</button>
+                        <button onclick="logout()" class="btn btn-danger btn-responsive">Logout</button>
                     {% else %}
-                        <a href="{% url 'accounts:login' %}" class="btn btn-success">Login</a>
+                        <a href="{% url 'accounts:login' %}" class="btn btn-success btn-responsive">Login</a>
                     {% endif %}
                 </div>
             </div>
         </nav>
-        
-        
 
         <!-- Dashboard Content -->
-        <div class="container-fluid mt-4">
+        <div class="container-fluid dashboard-content">
             <!-- Stats Cards Row -->
-            <div class="row mb-4">
-                <div class="col-md-3">
+            <div class="row mb-4 g-3">
+                <div class="col-lg-3 col-md-6 col-12">
                     <div class="stat-card bg-gradient-primary">
                         <div class="stat-card-body">
                             <i class="fas fa-boxes stat-icon"></i>
@@ -83,7 +78,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-lg-3 col-md-6 col-12">
                     <div class="stat-card bg-gradient-success">
                         <div class="stat-card-body">
                             <i class="fas fa-cubes stat-icon"></i>
@@ -96,12 +91,12 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-lg-3 col-md-6 col-12">
                     <div class="stat-card bg-gradient-info">
                         <div class="stat-card-body">
                             <i class="fas fa-rupee-sign stat-icon"></i>
                             <h5>Total Value</h5>
-                            <h2 style="font-size: 1.5rem; word-break: break-all;">₹{{ total_value }}</h2>
+                            <h2 class="value-text">₹{{ total_value }}</h2>
                             <p class="trend">
                                 <i class="fas fa-arrow-up"></i>
                                 <span>{{ value_percent }}% from last year</span>
@@ -109,7 +104,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-lg-3 col-md-6 col-12">
                     <div class="stat-card bg-gradient-warning">
                         <div class="stat-card-body">
                             <i class="fas fa-clock stat-icon"></i>
@@ -122,24 +117,28 @@
             </div>
 
             <!-- Charts Row -->
-            <div class="row mb-4">
-                <div class="col-md-6">
+            <div class="row mb-4 g-4">
+                <div class="col-lg-6 col-12">
                     <div class="chart-card">
                         <div class="chart-card-header">
                             <h5>Stock Distribution by Category</h5>
                         </div>
                         <div class="chart-card-body">
-                            <canvas id="categoryPieChart"></canvas>
+                            <div class="chart-container">
+                                <canvas id="categoryPieChart"></canvas>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-lg-6 col-12">
                     <div class="chart-card">
                         <div class="chart-card-header">
                             <h5>Monthly Allocation Trend</h5>
                         </div>
                         <div class="chart-card-body">
-                            <canvas id="monthlyLineChart"></canvas>
+                            <div class="chart-container">
+                                <canvas id="monthlyLineChart"></canvas>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -152,7 +151,7 @@
                 </div>
                 <div class="table-card-body">
                     <div class="table-responsive">
-                        <table class="table table-hover">
+                        <table class="table table-hover responsive-table">
                             <thead>
                                 <tr>
                                     <th>Date</th>
@@ -166,12 +165,12 @@
                             <tbody>
                                 {% for allocation in recent_items %}
                                 <tr>
-                                    <td>{{ allocation.date_of_receive }}</td>
-                                    <td>{{ allocation.product_description }}</td>
-                                    <td>{{ allocation.product_category }}</td>
-                                    <td>{{ allocation.accepted_product_quantity }}</td>
-                                    <td>₹{{ allocation.total_cost }}</td>
-                                    <td>
+                                    <td data-label="Date">{{ allocation.date_of_receive }}</td>
+                                    <td data-label="Item Name">{{ allocation.product_description }}</td>
+                                    <td data-label="Category">{{ allocation.product_category }}</td>
+                                    <td data-label="Quantity">{{ allocation.accepted_product_quantity }}</td>
+                                    <td data-label="Value">₹{{ allocation.total_cost }}</td>
+                                    <td data-label="Status">
                                         <span class="badge bg-success">Active</span>
                                     </td>
                                 </tr>
@@ -185,8 +184,13 @@
     </div>
 </div>
 
-<!-- Sidebar CSS -->
+<!-- Responsive CSS -->
 <style>
+    /* Base Styles */
+    body {
+        overflow-x: hidden;
+    }
+
     /* Sidebar Styles */
     .sidebar {
         position: fixed;
@@ -197,24 +201,104 @@
         background: linear-gradient(180deg, #1a1a1a 0%, #2d2d2d 100%);
         color: white;
         z-index: 1000;
+        transition: transform 0.3s ease;
     }
-    
+
+    .sidebar-content {
+        padding: 20px;
+        height: 100%;
+        overflow-y: auto;
+    }
+
+    .sidebar-close {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1.5rem;
+        cursor: pointer;
+        z-index: 1001;
+    }
+
     .department-icon {
-        font-size: 3rem;
+        font-size: clamp(2rem, 5vw, 3rem);
         color: #1DB954;
     }
-    
+
+    .department-title {
+        font-size: clamp(1rem, 3vw, 1.25rem);
+        line-height: 1.2;
+        word-wrap: break-word;
+    }
+
     .sidebar .nav-link {
         color: #ffffff;
         padding: 12px 20px;
         border-radius: 8px;
         margin: 4px 0;
         transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        text-decoration: none;
     }
 
     .sidebar .nav-link:hover, .sidebar .nav-link.active {
         background: linear-gradient(45deg, #1DB954, #17A2B8);
-        transform: translateX(10px);
+        transform: translateX(5px);
+        color: white;
+    }
+
+    .sidebar .nav-link i {
+        min-width: 20px;
+        text-align: center;
+    }
+
+    /* Sidebar Overlay for Mobile */
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+        display: none;
+    }
+
+    /* Hamburger Menu */
+    .hamburger-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 8px;
+        margin-right: 15px;
+        flex-direction: column;
+        justify-content: space-around;
+        width: 30px;
+        height: 30px;
+        display: flex;
+    }
+
+    .hamburger-line {
+        width: 100%;
+        height: 3px;
+        background-color: white;
+        transition: all 0.3s ease;
+        border-radius: 2px;
+    }
+
+    .hamburger-btn.active .hamburger-line:nth-child(1) {
+        transform: rotate(45deg) translate(6px, 6px);
+    }
+
+    .hamburger-btn.active .hamburger-line:nth-child(2) {
+        opacity: 0;
+    }
+
+    .hamburger-btn.active .hamburger-line:nth-child(3) {
+        transform: rotate(-45deg) translate(6px, -6px);
     }
 
     /* Main Content Styles */
@@ -223,23 +307,40 @@
         background-color: #f4f6f9;
         min-height: 100vh;
         width: calc(100% - 250px);
-        position: relative;
+        transition: margin-left 0.3s ease;
     }
 
     /* Navbar Styles */
     .navbar {
-        position: fixed;
-        top: 0;
-        right: 0;
-        left: 250px;
-        z-index: 999;
+        width: 100%;
         background-color: #343a40 !important;
         box-shadow: 0 2px 4px rgba(0,0,0,.1);
+        padding: 10px 15px;
     }
 
-    /* Adjust main content padding to account for fixed navbar */
-    .container-fluid.mt-4 {
-        padding-top: 80px;
+    .brand-text {
+        flex: 1;
+        text-align: center;
+        margin: 0 15px;
+    }
+
+    .btn-responsive {
+        padding: 8px 16px;
+        font-size: 14px;
+        white-space: nowrap;
+        border-radius: 25px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .btn-danger:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+    }
+
+    /* Dashboard Content */
+    .dashboard-content {
+        padding: 20px 15px;
     }
 
     /* Stat Cards */
@@ -250,6 +351,7 @@
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         transition: transform 0.3s ease;
         height: 100%;
+        min-height: 150px;
     }
 
     .stat-card:hover {
@@ -260,25 +362,33 @@
         height: 100%;
         display: flex;
         flex-direction: column;
+        justify-content: space-between;
     }
 
     .stat-card h2 {
         margin: 10px 0;
-        font-size: 2rem;
+        font-size: clamp(1.5rem, 4vw, 2rem);
+        word-break: break-word;
     }
 
     .stat-card h5 {
         margin-bottom: 0;
+        font-size: clamp(0.9rem, 3vw, 1.1rem);
+    }
+
+    .value-text {
+        font-size: clamp(1.2rem, 3vw, 1.5rem) !important;
+        word-break: break-all;
     }
 
     .stat-icon {
-        font-size: 2rem;
+        font-size: clamp(1.5rem, 4vw, 2rem);
         margin-bottom: 15px;
     }
 
     .trend {
-        font-size: 0.8rem;
-        margin-top: 10px;
+        font-size: clamp(0.7rem, 2vw, 0.8rem);
+        margin-top: auto;
         margin-bottom: 0;
     }
 
@@ -299,32 +409,13 @@
         background: linear-gradient(45deg, #f6c23e, #dda20a);
     }
 
-    /* Navbar Button Styles */
-    .navbar .btn-danger {
-        padding: 10px 25px;
-        border-radius: 25px;
-        font-weight: 500;
-        transition: all 0.3s ease;
-        background-color: #dc3545;
-        border-color: #dc3545;
-        color: white;
-        text-decoration: none;
-        display: inline-block;
-    }
-
-    .navbar .btn-danger:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
-        background-color: #c82333;
-        border-color: #bd2130;
-    }
-
     /* Chart Cards */
     .chart-card {
         background: white;
         border-radius: 15px;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         margin-bottom: 20px;
+        height: 400px;
     }
 
     .chart-card-header {
@@ -332,9 +423,20 @@
         border-bottom: 1px solid #e3e6f0;
     }
 
+    .chart-card-header h5 {
+        margin: 0;
+        font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+    }
+
     .chart-card-body {
         padding: 20px;
-        height: 300px;
+        height: calc(100% - 60px);
+    }
+
+    .chart-container {
+        position: relative;
+        height: 100%;
+        width: 100%;
     }
 
     /* Table Card */
@@ -342,6 +444,7 @@
         background: white;
         border-radius: 15px;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        margin-bottom: 30px;
     }
 
     .table-card-header {
@@ -349,24 +452,268 @@
         border-bottom: 1px solid #e3e6f0;
     }
 
+    .table-card-header h5 {
+        margin: 0;
+        font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+    }
+
     .table-card-body {
         padding: 20px;
+    }
+
+    .responsive-table {
+        margin-bottom: 0;
     }
 
     .table th {
         border-top: none;
         background-color: #f8f9fc;
+        font-size: clamp(0.8rem, 2vw, 0.9rem);
+    }
+
+    .table td {
+        font-size: clamp(0.8rem, 2vw, 0.9rem);
     }
 
     .badge {
-        padding: 8px 12px;
-        border-radius: 30px;
+        padding: 6px 10px;
+        border-radius: 15px;
+        font-size: 0.75rem;
+    }
+
+    /* Mobile Styles */
+    @media (max-width: 991.98px) {
+        .sidebar {
+            transform: translateX(-100%);
+        }
+
+        .sidebar.show {
+            transform: translateX(0);
+        }
+
+        .sidebar-overlay.show {
+            display: block;
+        }
+
+        .main-content {
+            margin-left: 0;
+            width: 100%;
+        }
+
+        .navbar .container-fluid {
+            padding: 0 10px;
+        }
+
+        .brand-text {
+            font-size: clamp(1rem, 4vw, 1.4rem) !important;
+            text-align: left;
+            margin: 0 10px;
+        }
+
+        .btn-responsive {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .dashboard-content {
+            padding: 15px 10px;
+        }
+
+        .stat-card {
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .chart-card {
+            height: auto;
+            min-height: 350px;
+        }
+
+        .chart-card-body {
+            height: 250px;
+        }
+    }
+
+    /* Tablet Styles */
+    @media (max-width: 768px) {
+        .responsive-table {
+            border: none;
+        }
+
+        .responsive-table thead {
+            display: none;
+        }
+
+        .responsive-table tbody tr {
+            display: block;
+            border: 1px solid #dee2e6;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            padding: 10px;
+            background: #f8f9fa;
+        }
+
+        .responsive-table tbody td {
+            display: block;
+            text-align: right;
+            border: none;
+            padding: 8px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .responsive-table tbody td:last-child {
+            border-bottom: none;
+        }
+
+        .responsive-table tbody td:before {
+            content: attr(data-label) ": ";
+            float: left;
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .badge {
+            display: inline-block;
+            margin-top: 2px;
+        }
+
+        .chart-card {
+            min-height: 300px;
+        }
+
+        .chart-card-body {
+            height: 200px;
+        }
+    }
+
+    /* Small Mobile Styles */
+    @media (max-width: 576px) {
+        .navbar {
+            padding: 8px 10px;
+        }
+
+        .stat-card {
+            padding: 12px;
+            min-height: 130px;
+        }
+
+        .stat-card h2 {
+            font-size: 1.4rem;
+        }
+
+        .stat-icon {
+            font-size: 1.3rem;
+        }
+
+        .department-icon {
+            font-size: 2rem;
+        }
+
+        .department-title {
+            font-size: 0.9rem;
+        }
+
+        .sidebar .nav-link {
+            font-size: 14px;
+            padding: 10px 15px;
+        }
+    }
+
+    /* Extra Small Devices */
+    @media (max-width: 480px) {
+        .brand-text {
+            font-size: 1rem !important;
+        }
+
+        .btn-responsive {
+            padding: 4px 8px;
+            font-size: 11px;
+        }
+
+        .stat-card h2 {
+            font-size: 1.2rem;
+        }
+
+        .value-text {
+            font-size: 1rem !important;
+        }
+    }
+
+    /* Print Styles */
+    @media print {
+        .sidebar,
+        .navbar,
+        .hamburger-btn {
+            display: none !important;
+        }
+
+        .main-content {
+            margin-left: 0 !important;
+            width: 100% !important;
+        }
+
+        .stat-card {
+            page-break-inside: avoid;
+        }
     }
 </style>
 
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- JavaScript for Responsive Functionality -->
 <script>
+    // Sidebar Toggle Functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebarClose = document.getElementById('sidebarClose');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        // Toggle sidebar on hamburger click
+        sidebarToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('show');
+            sidebarOverlay.classList.toggle('show');
+            this.classList.toggle('active');
+        });
+
+        // Close sidebar on close button click
+        sidebarClose.addEventListener('click', function() {
+            sidebar.classList.remove('show');
+            sidebarOverlay.classList.remove('show');
+            sidebarToggle.classList.remove('active');
+        });
+
+        // Close sidebar on overlay click
+        sidebarOverlay.addEventListener('click', function() {
+            sidebar.classList.remove('show');
+            sidebarOverlay.classList.remove('show');
+            sidebarToggle.classList.remove('active');
+        });
+
+        // Close sidebar on window resize if desktop
+        window.addEventListener('resize', function() {
+            if (window.innerWidth >= 992) {
+                sidebar.classList.remove('show');
+                sidebarOverlay.classList.remove('show');
+                sidebarToggle.classList.remove('active');
+            }
+        });
+
+        // Close sidebar when clicking nav links on mobile
+        const navLinks = document.querySelectorAll('.sidebar .nav-link');
+        navLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                if (window.innerWidth < 992) {
+                    sidebar.classList.remove('show');
+                    sidebarOverlay.classList.remove('show');
+                    sidebarToggle.classList.remove('active');
+                }
+            });
+        });
+    });
+
+    // Chart Initialization
     // Category Distribution Pie Chart
     const categoryCtx = document.getElementById('categoryPieChart').getContext('2d');
     new Chart(categoryCtx, {
@@ -380,9 +727,12 @@
                     '#1cc88a',
                     '#36b9cc',
                     '#f6c23e',
-                    '#e74a3b'
+                    '#e74a3b',
+                    '#858796',
+                    '#5a5c69'
                 ],
-                borderWidth: 1
+                borderWidth: 2,
+                borderColor: '#fff'
             }]
         },
         options: {
@@ -390,7 +740,13 @@
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    position: 'right'
+                    position: window.innerWidth < 768 ? 'bottom' : 'right',
+                    labels: {
+                        boxWidth: 12,
+                        font: {
+                            size: window.innerWidth < 768 ? 10 : 12
+                        }
+                    }
                 }
             }
         }
@@ -406,9 +762,13 @@
                 label: 'Allocations',
                 data: {{ monthly_data|safe }},
                 borderColor: '#1cc88a',
+                backgroundColor: 'rgba(28, 200, 138, 0.1)',
                 tension: 0.4,
                 fill: true,
-                backgroundColor: 'rgba(28, 200, 138, 0.1)'
+                pointBackgroundColor: '#1cc88a',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 5
             }]
         },
         options: {
@@ -416,10 +776,41 @@
             maintainAspectRatio: false,
             scales: {
                 y: {
-                    beginAtZero: true
+                    beginAtZero: true,
+                    ticks: {
+                        font: {
+                            size: window.innerWidth < 768 ? 10 : 12
+                        }
+                    }
+                },
+                x: {
+                    ticks: {
+                        font: {
+                            size: window.innerWidth < 768 ? 10 : 12
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    labels: {
+                        font: {
+                            size: window.innerWidth < 768 ? 10 : 12
+                        }
+                    }
                 }
             }
         }
+    });
+
+    // Responsive chart legend update on window resize
+    window.addEventListener('resize', function() {
+        Chart.helpers.each(Chart.instances, function(instance) {
+            if (instance.config.type === 'doughnut') {
+                instance.options.plugins.legend.position = window.innerWidth < 768 ? 'bottom' : 'right';
+                instance.update();
+            }
+        });
     });
 </script>
 

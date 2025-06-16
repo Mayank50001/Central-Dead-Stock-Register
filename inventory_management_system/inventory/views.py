@@ -46,7 +46,7 @@ def admin_dashboard(request):
     
     # Department stats using database aggregation
     department_stats = DDSR.objects.aggregate(
-        total_allocations=Count('ddsr_id'),
+        total_allocations=Count('product_description', distinct=True),
         total_departments=Count('department', distinct=True),
         active_departments=Count('department', distinct=True)
     )
