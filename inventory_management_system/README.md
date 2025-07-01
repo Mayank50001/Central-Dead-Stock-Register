@@ -77,7 +77,7 @@ DATABASES = {
         'NAME': 'inventory_db',
         'USER': 'your_mysql_username',
         'PASSWORD': 'your_mysql_password',
-        'HOST': 'localhost',
+        'HOST': 'localhost/your ip address',
         'PORT': '3306',
     }
 }
@@ -143,16 +143,6 @@ Access Locust Web UI:
 
 ---
 
-## 📸 Screenshots (Optional)
-
-You can add UI screenshots here for:
-- Login Page
-- Admin Dashboard
-- Department Dashboard
-- Inventory List View
-
----
-
 ## 🛠️ Deployment Script (Optional)
 
 A one-shot `setup.sh` script can:
@@ -164,11 +154,6 @@ A one-shot `setup.sh` script can:
 Let me know if you want this included.
 
 ---
-
-## 🤝 Contributing
-
-PRs and contributions are welcome.  
-For major changes, open an issue first to discuss what you want to update.
 
 ## 📝 License
 
