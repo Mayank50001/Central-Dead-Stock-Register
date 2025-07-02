@@ -4,12 +4,9 @@ from django.contrib import messages
 from django.utils import timezone
 from datetime import timedelta
 from django.urls import reverse
-from django.http import HttpResponseRedirect, JsonResponse
-from django.views.decorators.http import require_POST
-from django.contrib.auth.decorators import login_required
-from .models import CustomUser
+from django.http import HttpResponseRedirect
 from .forms import LoginForm
-from django.views.decorators.csrf import csrf_exempt
+from django.utils.cache import add_never_cache_headers
 
 MAX_INACTIVE_TIME = timedelta(minutes=10)  # 5 minutes in seconds
 
@@ -87,7 +84,9 @@ def login_view(request):
     else:
         form = LoginForm()
     
-    return render(request, "accounts/login.html", {"form": form})
+    response = render(request, "accounts/login.html", {"form": form})
+    add_never_cache_headers(response)
+    return response
 
 def logout_view(request):
     if request.user.is_authenticated:
@@ -101,4 +100,5 @@ def logout_view(request):
     
     logout(request)
     messages.success(request, "Logged out successfully!")
+    print("Redirecting to:", reverse("accounts:login"))
     return redirect_with_no_cache("accounts:login")
