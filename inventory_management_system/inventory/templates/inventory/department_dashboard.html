@@ -53,7 +53,7 @@
                 </span>
                 <div>
                     {% if user.is_authenticated %}
-                        <button onclick="logout()" class="btn btn-danger btn-responsive">Logout</button>
+                        <a href="{% url 'accounts:logout' %}" class="btn btn-danger btn-responsive">Logout</a>
                     {% else %}
                         <a href="{% url 'accounts:login' %}" class="btn btn-success btn-responsive">Login</a>
                     {% endif %}
