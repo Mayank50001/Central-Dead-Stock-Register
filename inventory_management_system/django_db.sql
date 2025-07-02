@@ -1,4 +1,4 @@
--- Adminer 4.8.1 MySQL 8.0.41 dump
+-- Adminer 4.8.1 MySQL 8.0.42 dump
 
 SET NAMES utf8;
 SET time_zone = '+00:00';
@@ -30,12 +30,12 @@ CREATE TABLE `accounts_customuser` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 INSERT INTO `accounts_customuser` (`id`, `password`, `last_login`, `is_superuser`, `first_name`, `last_name`, `is_staff`, `is_active`, `date_joined`, `email`, `role`, `department`, `last_ip_address`, `last_login_device`, `last_logout_device`, `last_activity`) VALUES
-(8,	'pbkdf2_sha256$870000$KM7pWBEsoJI5BJuKKsxX3L$OetLCAEwxcB9rYtAAFdDtqMxir4rBCX9Ajb+Kw0Hh6U=',	'2025-03-19 16:53:38.284701',	1,	'',	'',	1,	1,	'2025-03-11 05:40:00.000000',	'gpnadmin5010@gmail.com',	'admin',	NULL,	NULL,	NULL,	NULL,	NULL),
-(9,	'pbkdf2_sha256$870000$EhRqvoqHyqzZxbDI8ma4oS$FJUJaZ0JLoq5ZMAC0shoP4dOdp2JG2uzaDdiKDEKNDw=',	'2025-04-22 09:43:44.053289',	0,	'',	'',	1,	1,	'2025-03-11 05:43:34.135675',	'gpnashik5010@gmail.com',	'admin',	NULL,	'192.168.12.35',	'2025-04-22 09:43:43.913174',	NULL,	'2025-04-22 10:56:42.982889'),
+(9,	'pbkdf2_sha256$1000000$jk875jZY07fp7bxI0YmDMO$v2MltS34EpvcNlkHS0WN7qBTp1tMIjJPPTUrPvzUG4Q=',	'2025-07-02 10:02:44.756135',	0,	'',	'',	1,	1,	'2025-03-11 05:43:34.135675',	'gpnashik5010@gmail.com',	'admin',	NULL,	'127.0.0.1',	'2025-07-02 10:02:44.554335',	NULL,	'2025-07-02 10:03:13.981967'),
 (13,	'pbkdf2_sha256$870000$IXraaLNZLtHoi5Ds3NiE6Y$hCPoiXK2/kwzao03ts7jSmdJX9Vk8glMFUUMZstmddI=',	'2025-04-11 09:31:17.343856',	0,	'',	'',	0,	1,	'2025-03-15 17:44:45.467796',	'gpmechanical@gmail.com',	'department',	'Mechanical Engineering',	NULL,	NULL,	'2025-04-18 09:49:34.973950',	'2025-04-11 09:31:17.525467'),
 (15,	'pbkdf2_sha256$870000$Mr3UzMx6X7BD50N7r1TJgd$OHvu/Fwavg7034BVoAoES2CZ9qh1lv8sIrMQJhX5YUU=',	'2025-04-11 05:54:57.916054',	0,	'',	'',	0,	1,	'2025-03-26 06:42:02.897296',	'gpnelectrical@gmail.com',	'department',	'Electrical Engineering',	NULL,	NULL,	'2025-04-11 05:55:11.107363',	NULL),
 (16,	'pbkdf2_sha256$870000$1u0YA2UQC9xrRJE2RmzRYw$zDS22dMdYy9GxNsJ1nueOj3WI2m8+xlAAlBvxpH/J6Y=',	'2025-04-11 05:55:40.747184',	0,	'',	'',	0,	1,	'2025-03-26 09:10:53.452855',	'gpnentc@gmail.com',	'department',	'Electronics and Telecommunication Engineering',	NULL,	NULL,	'2025-04-11 05:56:10.335052',	NULL),
-(17,	'pbkdf2_sha256$870000$5fQOPHdJLnOy66rXuyhpt4$XqBB1IFT4ykrldJIZAoQ2agFH3/ZsumCkwZOwKLRn6A=',	NULL,	0,	'',	'',	0,	1,	'2025-04-22 05:45:10.762674',	'gpexam@gmail.com',	'department',	'Exam Section',	NULL,	NULL,	NULL,	NULL);
+(17,	'pbkdf2_sha256$870000$5fQOPHdJLnOy66rXuyhpt4$XqBB1IFT4ykrldJIZAoQ2agFH3/ZsumCkwZOwKLRn6A=',	NULL,	0,	'',	'',	0,	1,	'2025-04-22 05:45:10.762674',	'gpexam@gmail.com',	'department',	'Exam Section',	NULL,	NULL,	NULL,	NULL),
+(18,	'pbkdf2_sha256$1000000$zfbRoFHhLgfX0io240F3Vp$/pEkxAl1C5xPsVGlWgipqXVis0t/VhuQH6xHGvuZpgo=',	'2025-07-02 10:03:27.000000',	1,	'',	'',	1,	1,	'2025-07-02 10:00:29.000000',	'gpnadmin5010@gmail.com',	'admin',	NULL,	NULL,	NULL,	NULL,	NULL);
 
 DROP TABLE IF EXISTS `accounts_customuser_groups`;
 CREATE TABLE `accounts_customuser_groups` (
@@ -169,18 +169,7 @@ CREATE TABLE `django_admin_log` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 INSERT INTO `django_admin_log` (`id`, `action_time`, `object_id`, `object_repr`, `action_flag`, `change_message`, `content_type_id`, `user_id`) VALUES
-(8,	'2025-03-11 05:41:51.911314',	'7',	'gpnashik5010@gmail.com (admin)',	3,	'',	1,	8),
-(9,	'2025-03-11 05:41:51.911604',	'3',	'gpnashiksuperuser@gmail.com (admin)',	3,	'',	1,	8),
-(10,	'2025-03-11 05:41:51.911754',	'5',	'gpncomputer@outlook.com (department)',	3,	'',	1,	8),
-(11,	'2025-03-11 05:41:51.911897',	'6',	'gpninformation@gmail.com (department)',	3,	'',	1,	8),
-(12,	'2025-03-11 05:42:48.040897',	'8',	'gpnadmin5010@gmail.com (admin)',	2,	'[{\"changed\": {\"fields\": [\"Role\"]}}]',	1,	8),
-(13,	'2025-03-11 05:43:35.209943',	'9',	'gpnashik5010@gmail.com (admin)',	1,	'[{\"added\": {}}]',	1,	8),
-(14,	'2025-03-11 05:44:19.987875',	'10',	'gpncomputer@gmail.com (department)',	1,	'[{\"added\": {}}]',	1,	8),
-(15,	'2025-03-11 05:44:26.785736',	'10',	'gpncomputer@gmail.com (department)',	2,	'[]',	1,	8),
-(16,	'2025-03-11 05:45:14.414339',	'10',	'gpncomputer@gmail.com (department)',	2,	'[]',	1,	8),
-(17,	'2025-03-11 05:45:47.375588',	'10',	'gpncomputer@gmail.com (department)',	3,	'',	1,	8),
-(18,	'2025-03-15 17:42:53.035952',	'12',	'gpnelectrical@gmail.com (department)',	3,	'',	1,	8),
-(19,	'2025-03-15 17:42:53.036011',	'11',	'gpnmechanical@gmail.com (department)',	3,	'',	1,	8);
+(1,	'2025-07-02 10:04:05.090824',	'18',	'gpnadmin5010@gmail.com',	2,	'[{\"changed\": {\"fields\": [\"Role\"]}}]',	1,	18);
 
 DROP TABLE IF EXISTS `django_content_type`;
 CREATE TABLE `django_content_type` (
@@ -319,6 +308,7 @@ INSERT INTO `django_session` (`session_key`, `session_data`, `expire_date`) VALU
 ('tgqr1d0um2v8sh4stx8d8ignso520m0f',	'.eJxVjEEOwiAQRe_C2pChDAVcuvcMZGBAqoYmpV0Z765NutDtf-_9lwi0rTVsPS9hYnEWXpx-t0jpkdsO-E7tNss0t3WZotwVedAurzPn5-Vw_w4q9fqtB9ag7MigKJrBu6KLgTFhdlx8AkRMGdnoaJFSBAsGFcZCzpcBvFPi_QHXpjdw:1u3AZu:kgpEODcs50-r-zCL1ABwAYmBx137pIZeey1NQF2H14A',	'2025-04-25 09:21:38.140277'),
 ('tx7o2b1jdzokfdw6xqe9omf8af1gf1gc',	'.eJxVjEEOwiAQRe_C2pChDAVcuvcMZGBAqoYmpV0Z765NutDtf-_9lwi0rTVsPS9hYnEWXpx-t0jpkdsO-E7tNss0t3WZotwVedAurzPn5-Vw_w4q9fqtB9ag7MigKJrBu6KLgTFhdlx8AkRMGdnoaJFSBAsGFcZCzpcBvFPi_QHXpjdw:1u0GsU:rYOV7k5sOu-1MFDkFyH-JQNQDR32UJjWxYZHFhavbV8',	'2025-04-03 09:48:50.149170'),
 ('uflyusoxlhi60kzf3o9ur76snihr9q0b',	'.eJxVjEEOwiAQRe_C2pChDAVcuvcMZGBAqoYmpV0Z765NutDtf-_9lwi0rTVsPS9hYnEWXpx-t0jpkdsO-E7tNss0t3WZotwVedAurzPn5-Vw_w4q9fqtB9ag7MigKJrBu6KLgTFhdlx8AkRMGdnoaJFSBAsGFcZCzpcBvFPi_QHXpjdw:1u0EHp:LIQ_Ckg-svR2T6CegwYbuAmhbz4I35u2NEXXWK5X7h4',	'2025-04-03 07:02:49.609004'),
+('uthm2ktkblfzsaxoxcn9v587ymxsf5ei',	'.eJxVjMEOwiAQRP-FsyFsCwIevfsNZNldpGrapLQn47_bJj3oaZJ5b-atEq5LTWuTOQ2sLgqCOv2WGekp4074geN90jSNyzxkvSv6oE3fJpbX9XD_Diq2uq17Z845FyMFSCRAhOJt5C2IAcgG27vOBNNlcBA4kmEbI_rOC7Igqc8XCa04Ng:1uWuJz:g7x0lch1DVYVXQfVlluRWBZHFvpSyvGvLJYzKtE7X6s',	'2025-07-16 10:04:07.815165'),
 ('v22hrx8lmt22v8fwtiv0qe56dgrd5qss',	'.eJxVjL0OgjAURt-lq9LctrfQdnR3cye3f4ISSKCYGOO7C4mDrt8533mxltbSteuS5raPzDHLjr-bp3BP4w7ijcbrxMM0lrn3fFf4ly78PMU0nL7uX6CjpdveMioQTR1BkNfSmqyyhjpgMjHbAIgYEkatfIMUPDSgUaDPZGyWYI3YogMtpaVQ-kdfnnsSpK4AKwEXYR1Ih4rXVihrDgAOgL0_VbFEWA:1u2xAh:MJWd915QWTgxDcAD9KNblr3QgHlIVfqaTq7cXXHq8Os',	'2025-04-10 19:02:53.850876'),
 ('v3w16pq3kttwo4zfq4fqw31gyq119asa',	'e30:1trsJe:iAqbKjTVIlIfeduW92BKvpZ-1w2cO57Ct_jLHVLSFBU',	'2025-03-25 05:38:10.852147'),
 ('v9kcfavmcq2mlcagx41jjmxx4941ouo6',	'e30:1u2tds:tPLFgBMNqMSH3748tSmPITWPiMNRJCQP_vQuaTZKhb4',	'2025-04-10 15:36:36.119506'),
@@ -4463,4 +4453,4 @@ CREATE TABLE `login` (
 INSERT INTO `login` (`lid`, `passw`, `usname`) VALUES
 (1,	'‹}1[;‘6^¿›±ˆ\Zn\"',	'Store@GPN');
 
--- 2025-04-22 10:57:18
+-- 2025-07-02 15:49:23
