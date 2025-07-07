@@ -7,3 +7,4 @@ packaging==25.0
 PyMySQL==1.1.1
 sqlparse==0.5.3
 whitenoise==6.9.0
+cryptography 
